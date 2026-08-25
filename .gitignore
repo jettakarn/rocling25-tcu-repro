@@ -1,0 +1,37 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Boosting / training junk
+catboost_info/
+
+# Data & model artifacts (large / shared-task raw)
+data/raw/**
+!data/raw/.gitkeep
+!data/raw/README.md
+data/processed/**
+!data/processed/.gitkeep
+data/embeddings/**
+!data/embeddings/.gitkeep
+
+# Hugging Face / torch caches in-project
+models/
+.cache/
+
+# Results: keep metrics & submissions; drop official scoring staging (copies ans)
+results/**
+!results/.gitkeep
+!results/*.json
+!results/*_submission.csv
+results/_official_score/
+results/_official_score_ensemble/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

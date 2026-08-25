@@ -1,0 +1,18 @@
+seed: 42
+encoder_name: intfloat/multilingual-e5-large-instruct
+batch_size: 16
+max_length: 512
+device: cuda
+instruct_task: "Classify the valence and arousal of the given Chinese text on a 1-9 dimensional sentiment scale"
+
+svr:
+  kernel: rbf
+  C: 10.0
+  epsilon: 0.2
+
+data:
+  train_path: data/processed/train.csv
+  dev_path: data/processed/dev.csv
+  test_path: data/processed/test.csv
+  embeddings_dir: data/embeddings
+  results_dir: results

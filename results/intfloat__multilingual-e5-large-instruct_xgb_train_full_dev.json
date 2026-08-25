@@ -1,0 +1,13 @@
+{
+  "encoder": "intfloat/multilingual-e5-large-instruct",
+  "model": "xgb",
+  "strategy": "train_full_dev",
+  "n_train": 3948,
+  "n_eval": 994,
+  "metrics": {
+    "mae_v": 0.007073293813197587,
+    "mae_a": 0.010919142177167314,
+    "pcc_v": 0.9995671955862577,
+    "pcc_a": 0.9992739677696613
+  }
+}

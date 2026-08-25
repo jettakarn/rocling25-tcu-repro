@@ -1,0 +1,52 @@
+{
+  "preset": "deepseek",
+  "repo": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+  "gpu": "NVIDIA GeForce RTX 3070",
+  "vram_total_gb": 8.0,
+  "estimates": {
+    "fp16_weights_gb": 16.4,
+    "bnb_4bit_weights_gb": "4.5–6"
+  },
+  "preset_notes": "Paper Table 1/3 primary encoder. Reasoning distill of Qwen3-8B.",
+  "official_4bit": null,
+  "quant_implementation": {
+    "pip": "pip install bitsandbytes accelerate",
+    "config": {
+      "load_in_4bit": true,
+      "bnb_4bit_quant_type": "nf4",
+      "bnb_4bit_compute_dtype": "float16",
+      "bnb_4bit_use_double_quant": true
+    },
+    "embed_recipe": [
+      "AutoTokenizer + AutoModel (not causal LM generate)",
+      "forward → last_hidden_state",
+      "mean-pool over non-pad tokens (or last token — pick one and keep fixed)",
+      "batch_size=1, max_length≤512 on 8GB",
+      "cache .npy then reuse existing SVR / ensemble scripts"
+    ],
+    "risks": [
+      "Quant ≠ paper FP precision; numbers not claimable as Table 3 reproduction",
+      "Long medical texts inflate activations → OOM",
+      "Full corpus embed (~5.5k texts) is hours + fragile",
+      "Windows bitsandbytes historically flaky; may need WSL2"
+    ]
+  },
+  "verdict": {
+    "fp16_embedding": "no",
+    "bnb_4bit_embedding": "maybe — install bnb; probe single forward first",
+    "full_paper_table3_reproduction": "no on 8GB without quant deviation",
+    "multi_encoder_with_8b": "no for five 8B encoders; yes for dual e5 (+optional 4bit one-shot later)",
+    "recommendation": "Keep e5-instruct + e5-large encoder ensemble on 8GB. Treat DeepSeek/TAIDE 4-bit as optional research probe, not Week-1 critical path."
+  },
+  "bitsandbytes": true,
+  "accelerate": true,
+  "load_ok": true,
+  "peak_vram_after_load_gb": 4.59,
+  "n_tokens": 1,
+  "forward_ok": true,
+  "probe_hidden_shape": [
+    1,
+    4096
+  ],
+  "peak_vram_after_forward_gb": 4.59
+}

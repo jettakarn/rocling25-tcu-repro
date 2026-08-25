@@ -1,0 +1,17 @@
+{
+  "encoder": "intfloat/multilingual-e5-large",
+  "strategy": "train_full_dev",
+  "n_train": 3948,
+  "n_test": 1541,
+  "metrics": {
+    "mae_v": 0.5553542747751947,
+    "mae_a": 0.8058169454251434,
+    "pcc_v": 0.739221757951618,
+    "pcc_a": 0.5344915022869089
+  },
+  "submission": "results/intfloat__multilingual-e5-large_test_train_full_dev_submission.csv",
+  "clip_range": [
+    1.0,
+    9.0
+  ]
+}

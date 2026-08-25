@@ -1,0 +1,13 @@
+{
+  "encoder": "intfloat/multilingual-e5-large-instruct",
+  "model": "catboost",
+  "strategy": "train_half_dev",
+  "n_train": 3451,
+  "n_eval": 497,
+  "metrics": {
+    "mae_v": 0.5365483319305899,
+    "mae_a": 1.0402750672449743,
+    "pcc_v": 0.7586015294327858,
+    "pcc_a": 0.5117593238920592
+  }
+}
