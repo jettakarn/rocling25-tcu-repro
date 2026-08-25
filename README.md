@@ -1,4 +1,4 @@
-# ROCLING-2025 TCU DSA reproduction (short weekly project)
+# ROCLING-2025 TCU Reproduction
 
 This repo tries to reproduce parts of the paper  
 *TCU at ROCLING-2025 Shared Task: Leveraging LLM Embeddings and Ensemble Regression for Chinese Dimensional Sentiment Analysis*  
@@ -34,7 +34,7 @@ Shared-task clone: `data/raw/ROCLING-2025-ST-DSA-MST/`
 
 Raw data and embedding `.npy` files are **not** in git (see `.gitignore`).
 
-## How to run (Windows)
+## How to run on Windows
 
 ```powershell
 cd D:\Projects\rocling-dsa-repro
@@ -43,6 +43,7 @@ cd D:\Projects\rocling-dsa-repro
 pip install -r requirements.txt
 pip install torch --index-url https://download.pytorch.org/whl/cu126 --force-reinstall
 
+
 python -m src.prepare_data
 python -m src.embed --split all
 python -m src.train_svr --strategy train_half_dev
@@ -50,3 +51,23 @@ python -m src.predict_test --strategy train_full_dev --run-official-scoring
 python -m src.train_resnet --strategy train_half_dev
 python -m src.ensemble_models --strategy train_full_dev --run-official-scoring
 ```
+
+## Disclaimer
+This repository provides an **independent reproduction** of the methodology described in the paper and is **not an official release** by the original authors. 
+
+The original authors did not release their code publicly. All implementation details, pipeline scripts, and experiments here are reconstructed independently based on the methodology outlined in the paper for academic research and reproducibility purposes.
+
+---
+
+## Citation & Acknowledgements
+If you use this reproduction or reference the original methodology in your research, please cite the original paper:
+
+```bibtex
+@inproceedings{li-lin-2025-tcu,
+  title     = {TCU at ROCLING-2025 Shared Task: Leveraging LLM Embeddings and Ensemble Regression for Chinese Dimensional Sentiment Analysis},
+  author    = {Li, Hsin-Chieh and Lin, Wen-Cheng},
+  booktitle = {Proceedings of the 37th Conference on Computational Linguistics and Speech Processing (ROCLING 2025)},
+  pages     = {399--406},
+  year      = {2025},
+  publisher = {Association for Computational Linguistics}
+}
