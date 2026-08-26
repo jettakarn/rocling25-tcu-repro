@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 
 import numpy as np
+import torch
 import yaml
 from sentence_transformers import SentenceTransformer
 
@@ -58,7 +59,11 @@ def main() -> None:
     with open(args.config, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
-    model = SentenceTransformer(cfg["encoder_name"], device=cfg.get("device", "cuda"))
+    device = cfg.get("device", "cuda")
+    if device == "cuda" and not torch.cuda.is_available():
+        print("cuda not available; falling back to cpu")
+        device = "cpu"
+    model = SentenceTransformer(cfg["encoder_name"], device=device)
     out_dir = Path(cfg["data"]["embeddings_dir"]) / encoder_slug(cfg["encoder_name"])
     out_dir.mkdir(parents=True, exist_ok=True)
 

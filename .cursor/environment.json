@@ -1,0 +1,5 @@
+{
+  "name": "ROCLING-2025 TCU Reproduction",
+  "user": "ubuntu",
+  "install": "bash .cursor/install.sh"
+}
