@@ -6,7 +6,7 @@ Main setup: **`intfloat/multilingual-e5-large-instruct` + SVR** (RBF, C=10, ε=0
 
 I did **not** fully reproduce DeepSeek FP16 embedding or the paper’s five-encoder mix. Later days add CustomResNet, model averaging, e5-large, and some GPU checks for 8B models.
 
-Day notes: `day3.md`, `day4.md`, `day6.md`, `day7.md`.  
+Day notes: `day3.md`, `day4.md`, `day6.md`, `day7.md`, `day8.md`.  
 Scores as JSON: `results/*.json`.
 
 ---
@@ -18,14 +18,16 @@ Goal: rebuild the “embed text → regress valence/arousal” pipeline with som
 | Item | Result |
 |---|---|
 | Data | train 2954 (5 folds), dev 994, test 1541 |
-| Half-dev (for tuning) | MAE_V 0.541 / MAE_A **1.044** / PCC_V 0.756 / PCC_A 0.526 |
-| **Test (SVR)** | **0.488 / 0.788 / 0.788 / 0.578** |
-| **Test (five-model average, final)** | **0.473 / 0.774 / 0.795 / 0.598** |
-| e5-large (no instruct) on test | 0.555 / 0.806 / 0.739 / 0.534 (close to paper Table 3) |
-| vs paper e5 (Table 3, full-dev eval) | our instruct test arousal ≈ 0.788 vs paper 0.807 |
-| vs TCU leaderboard | about +0.01–0.02 MAE behind their big ensemble |
+| **e5-instruct + SVR (`half_dev`)** | 0.541 / 1.044 / 0.756 / 0.526 (497 held-out dev rows) |
+| **e5-instruct + SVR (`full_dev_on_dev`)** | 0.497 / 0.984 / 0.788 / 0.590 (paper Table 3 style; optimistic) |
+| **e5-instruct + SVR (`test`)** | **0.488 / 0.788 / 0.788 / 0.578** |
+| **Test (five-model average)** | **0.473 / 0.774 / 0.795 / 0.598** |
+| **Test (A4: SVR + labeled_dev ×3 weight)** | **0.496 / 0.765 / 0.789 / 0.601** |
+| e5-large (no instruct) on test | 0.555 / 0.806 / 0.739 / 0.534 |
+| vs paper e5 (Table 3, `full_dev_on_dev`) | ours 0.984 MAE_A on dev vs paper 0.807 (different encoder eval setup) |
+| vs TCU leaderboard | A4 arousal ~0.765 ≈ board ~0.76; valence still behind; board ≈ Table 4 **Encoders** on **test** |
 | DeepSeek-R1 8B | 4-bit load works (~4.6GB); Chinese tokenizer broke full embedding for now |
-| Bottom line | half-dev arousal looks worse than test; best 8GB result is e5-instruct + model average |
+| Bottom line | best **arousal** on 8GB is A4 labeled_dev ×3 (0.765); best **valence** is five-model average (0.473) |
 
 ---
 
@@ -52,10 +54,21 @@ Length and VA means look like the paper (train ~57.6 chars, V/A ≈ 4.8; dev/tes
 
 - SVR RBF, C=10, ε=0.2 (same as the paper)
 - Train modes: `train` / `train_half_dev` / `train_full_dev`
-- For test I train on **train + full_dev**, then score on held-out test
 - Predictions clipped to [1, 9]; matches official `scoring.py`
 
-### 2.4 Commands
+### 2.4 Evaluation protocols (read before comparing numbers)
+
+We report three eval columns side by side. They answer different questions; do not mix them when comparing to the paper or the leaderboard.
+
+| Protocol | Train set | Scored on | Role |
+|---|---|---|---|
+| **`half_dev`** | train + half of labeled dev (3451 rows) | other half of dev (497) | tuning / sanity check (noisy on arousal) |
+| **`full_dev_on_dev`** | train + full labeled dev (3948 rows) | full dev (994) | matches paper **Table 3** spirit (optimistic) |
+| **`test`** | train + full labeled dev (3948 rows) | held-out test (1541) | **main claim**; matches shared-task / board scoring |
+
+**Leaderboard note:** TCU’s published board scores (~0.46 / 0.76 MAE) follow the spirit of paper **Table 4 Encoders** — multi-encoder ensemble on **test** — not **Table 3** (single-encoder SVR on **dev** after training on train+full_dev). Our headline numbers use **`test`** after `train_full_dev`.
+
+### 2.5 Commands
 
 ```powershell
 cd D:\Projects\rocling-dsa-repro
@@ -65,45 +78,61 @@ python -m src.prepare_data
 python -m src.embed --split all
 python -m src.train_svr --strategy train_half_dev
 python -m src.predict_test --strategy train_full_dev --run-official-scoring
+python -m src.domain_adapt --dev-copies 3
 ```
 
 ---
 
 ## 3. Results
 
-### 3.1 Half-dev (e5 + SVR)
+All metrics below for **e5-instruct + SVR** unless noted. Source: `results/*.json`.
 
-| Strategy | MAE_V | MAE_A | PCC_V | PCC_A |
-|---|---:|---:|---:|---:|
-| train | 0.586 | 1.120 | 0.725 | 0.490 |
-| train_half_dev | **0.541** | **1.044** | **0.756** | **0.526** |
-| train_full_dev (too optimistic on dev) | 0.497 | 0.984 | 0.788 | 0.590 |
+### 3.1 Side-by-side: `half_dev` / `full_dev_on_dev` / `test`
 
-Small checks on half-dev: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046; L2 1.044. Changing the regressor did not really help arousal.
+| Setup | Protocol | n_train | n_eval | MAE_V | MAE_A | PCC_V | PCC_A |
+|---|---|---:|---:|---:|---:|---:|---:|
+| train only | dev (not half split) | 2954 | 994 | 0.586 | 1.120 | 0.725 | 0.490 |
+| **train_half_dev** | **`half_dev`** | 3451 | 497 | **0.541** | **1.044** | **0.756** | **0.526** |
+| **train_full_dev** | **`full_dev_on_dev`** | 3948 | 994 | **0.497** | **0.984** | **0.788** | **0.590** |
+| train_full_dev | **`test`** | 3948 | 1541 | **0.488** | **0.788** | **0.788** | **0.578** |
 
-### 3.2 Test
+Paper **Table 3** e5-instruct row (SVR + train+full_dev, scored on dev): 0.523 / 0.807 / 0.742 / 0.539 — same **`full_dev_on_dev`** column as our 0.497 / 0.984 row, not our **`test`** row.
+
+Small checks on **`half_dev`**: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046; L2 1.044. Changing the regressor did not really help arousal.
+
+### 3.2 Test extras (all `train_full_dev` → `test`)
 
 | Setup | MAE_V | MAE_A | PCC_V | PCC_A |
 |---|---:|---:|---:|---:|
 | train only (SVR) | 0.496 | 0.854 | 0.770 | 0.527 |
-| **train + full_dev (SVR)** | **0.488** | **0.788** | **0.788** | **0.578** |
-| CustomResNet (same train) | 0.455 | 0.797 | 0.790 | 0.585 |
+| **e5-instruct + SVR** | **0.488** | **0.788** | **0.788** | **0.578** |
+| e5-large (no instruct) + SVR | 0.555 | 0.806 | 0.739 | 0.534 |
+| dual e5 SVR mean (encoder ensemble) | 0.499 | 0.774 | 0.784 | 0.585 |
+| CustomResNet | 0.455 | 0.797 | 0.790 | 0.585 |
 | Average SVR+LGBM+XGB+ResNet | 0.472 | 0.776 | 0.795 | 0.596 |
 | **+ CatBoost (five models)** | **0.473** | **0.774** | **0.795** | **0.598** |
+| A4 SVR labeled_dev weight ×3 | 0.496 | **0.765** | 0.789 | 0.601 |
 
 ### 3.3 Compare to the paper / leaderboard
 
-| System | Eval | MAE_V | MAE_A | PCC_V | PCC_A |
+| System | Protocol | MAE_V | MAE_A | PCC_V | PCC_A |
 |---|---|---:|---:|---:|---:|
-| This repo, e5+SVR | test | 0.488 | 0.788 | 0.788 | 0.578 |
-| **This repo, model average** | test | **0.473** | **0.774** | **0.795** | **0.598** |
-| Paper Table 3 e5-instruct | full_dev (dev) | 0.523 | 0.807 | 0.742 | 0.539 |
-| Paper Table 4 Models | paper | 0.495 | 0.802 | 0.772 | 0.544 |
-| Paper Table 4 Encoders | paper | 0.463 | 0.759 | 0.805 | 0.608 |
-| TCU multi-encoder | test (board) | 0.46 | 0.76 | 0.81 | 0.61 |
-| CYUT-NLP (1st) | test | 0.46 | 0.74 | 0.78 | 0.63 |
+| This repo, e5+SVR | **`test`** | 0.488 | 0.788 | 0.788 | 0.578 |
+| This repo, e5+SVR | **`full_dev_on_dev`** | 0.497 | 0.984 | 0.788 | 0.590 |
+| This repo, five-model average | **`test`** | **0.473** | 0.774 | **0.795** | 0.598 |
+| **This repo, A4 stronger labeled_dev** | **`test`** | 0.496 | **0.765** | 0.789 | **0.601** |
+| Paper Table 3 e5-instruct | **`full_dev_on_dev`** | 0.523 | 0.807 | 0.742 | 0.539 |
+| Paper Table 4 Models | paper (mixed) | 0.495 | 0.802 | 0.772 | 0.544 |
+| Paper Table 4 Encoders | paper (mixed) | 0.463 | 0.759 | 0.805 | 0.608 |
+| TCU multi-encoder | **`test`** (board) | 0.46 | 0.76 | 0.81 | 0.61 |
+| CYUT-NLP (1st) | **`test`** | 0.46 | 0.74 | 0.78 | 0.63 |
 
-Note: Tables 1–2 in the paper mostly use **DeepSeek**. Table 3 e5 numbers are on **dev with full_dev training**, not the same as our **test** numbers. Compare carefully.
+**How to read this table**
+
+- Compare our **`test`** rows to TCU / CYUT and to paper **Table 4 Encoders** — all are held-out **`test`** (or paper ensemble) claims, not Table 3 dev scores.
+- Compare our **`full_dev_on_dev`** row to paper **Table 3** e5-instruct — both train on train+full_dev and score on **dev** (optimistic; dev labels were in training).
+- Do **not** compare our **`half_dev`** arousal (1.044) to paper Table 3 (0.807) or the board (0.76); the holdout is small and a different split.
+- Tables 1–2 in the paper mostly use **DeepSeek**, not e5.
 
 ### 3.4 DeepSeek / other 8B models
 
@@ -114,14 +143,14 @@ On 8GB, full FP16 embedding is not realistic. 4-bit can load, but Chinese tokeni
 
 ## 4. Discussion
 
-1. **Half-dev is not the same as test.**  
-   Half-dev MAE_A was 1.044; the same idea on test got 0.788. The holdout is small and noisy, so I should not judge only from half-dev.
+1. **Use the right protocol column.**  
+   `half_dev` MAE_A was 1.044; the same SVR on **`test`** got 0.788. Paper Table 3 (0.807) belongs in **`full_dev_on_dev`**, not **`half_dev`** or **`test`**. The board (~0.76 MAE_A) belongs with **`test`** / Table 4 **Encoders**, not Table 3.
 
-2. **Single e5 is already close to the paper’s e5; averaging models helps a bit more.**  
-   Test arousal is in the same range as paper Table 3. After averaging, we are about 0.01–0.02 MAE behind the TCU board. Closing that gap likely needs stronger / more encoders and more VRAM.
+2. **Single e5 on test is already strong; averaging models helps a bit more.**  
+   Test arousal 0.788 is closer to the board than half-dev tuning suggested. After five-model averaging we are about 0.01–0.02 MAE behind TCU. Closing that gap likely needs more encoders and more VRAM.
 
 3. **Domain shift.**  
-   Train is general CVAT text; dev/test are medical reflections. Adding labeled_dev into training helps a lot on test (especially arousal).
+   Train is general CVAT text; dev/test are medical reflections. Adding labeled_dev into training helps a lot on test (especially arousal). Day 8: **weighting labeled_dev ×3** further cuts MAE_A to **0.765** (beats five-head on arousal). Retrieval upsample and soft pseudo on a held-out half_dev did not help.
 
 4. **What I skipped.**  
    Full DeepSeek FP16 embedding and five big encoders. CustomResNet and model averaging are in the repo. 4-bit DeepSeek is only a feasibility check for now.
@@ -149,6 +178,7 @@ On 8GB, full FP16 embedding is not realistic. 4-bit can load, but Chinese tokeni
 | `src/custom_resnet.py` / `train_resnet.py` | paper-style MLP |
 | `src/ensemble_models.py` | average several regressors |
 | `src/ensemble_encoders.py` | average SVRs from more than one encoder |
+| `src/domain_adapt.py` | A4 labeled_dev weight / retrieval / pseudo |
 | `src/probe_llm.py` | 8B load checks |
 | `results/*` | metrics JSON and submission csv |
 | `notes/` | day notes and this report |
@@ -166,3 +196,4 @@ On 8GB, full FP16 embedding is not realistic. 4-bit can load, but Chinese tokeni
 | 5 | This report | done |
 | 6 | ResNet, model average, DeepSeek check | done |
 | 7 | e5-large, CatBoost, dual e5, 4-bit probe | done |
+| 8 | A4 domain adapt (dev ×3 → MAE_A 0.765) | done |

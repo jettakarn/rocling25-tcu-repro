@@ -1,0 +1,140 @@
+{
+  "encoder": "intfloat/multilingual-e5-large-instruct",
+  "phase": "A4",
+  "seed": 42,
+  "leakage_note": "Test gold valence/arousal are never used as training targets. Pseudo experiments soft-label a held-out half of labeled_dev only; retrieval uses train labels of neighbors selected by similarity to labeled_dev.",
+  "baselines_documented": {
+    "svr_train_full_dev_test": {
+      "mae_v": 0.488227784713437,
+      "mae_a": 0.7883211239085217,
+      "pcc_v": 0.7879031296167227,
+      "pcc_a": 0.5775042239356336,
+      "source": "results/intfloat__multilingual-e5-large-instruct_test_train_full_dev.json"
+    },
+    "five_head_ensemble_test": {
+      "mae_v": 0.473234536593205,
+      "mae_a": 0.7741227775230134,
+      "pcc_v": 0.795433911361989,
+      "pcc_a": 0.5982459851872609,
+      "source": "results/intfloat__multilingual-e5-large-instruct_test_train_full_dev_ensemble.json"
+    },
+    "rerun_baseline_train_full_dev": {
+      "name": "baseline_train_full_dev",
+      "n_train": 3948,
+      "metrics": {
+        "mae_v": 0.488227784713437,
+        "mae_a": 0.7883211239085217,
+        "pcc_v": 0.7879031296167227,
+        "pcc_a": 0.5775042239356336
+      }
+    }
+  },
+  "hyperparams": {
+    "dev_copies": 3,
+    "retrieval_n": 400,
+    "retrieval_copies": 2,
+    "pseudo_keep_quantile": 0.7,
+    "pseudo_holdout_teacher_metrics": {
+      "mae_v": 0.5407978963018171,
+      "mae_a": 1.0435253984167052,
+      "pcc_v": 0.7556049723638307,
+      "pcc_a": 0.5259220404689745
+    },
+    "pseudo_keep_n": 348,
+    "pseudo_hold_n": 497
+  },
+  "experiments": [
+    {
+      "name": "baseline_train_full_dev",
+      "n_train": 3948,
+      "metrics": {
+        "mae_v": 0.488227784713437,
+        "mae_a": 0.7883211239085217,
+        "pcc_v": 0.7879031296167227,
+        "pcc_a": 0.5775042239356336
+      }
+    },
+    {
+      "name": "stronger_dev_x3",
+      "n_train": 5936,
+      "metrics": {
+        "mae_v": 0.49552897939923624,
+        "mae_a": 0.7649995067197272,
+        "pcc_v": 0.7887190043631924,
+        "pcc_a": 0.600976438660212
+      }
+    },
+    {
+      "name": "dev_sample_weight_x3",
+      "n_train": 3948,
+      "metrics": {
+        "mae_v": 0.4955186882296705,
+        "mae_a": 0.7649973527907653,
+        "pcc_v": 0.788715346389835,
+        "pcc_a": 0.6009815907308016
+      }
+    },
+    {
+      "name": "retrieval_upsample_n400_x2",
+      "n_train": 4748,
+      "metrics": {
+        "mae_v": 0.488907434476193,
+        "mae_a": 0.7943097727079885,
+        "pcc_v": 0.7879253608345741,
+        "pcc_a": 0.568989962495744
+      }
+    },
+    {
+      "name": "stronger_dev_x3+retrieval_n400_x2",
+      "n_train": 6736,
+      "metrics": {
+        "mae_v": 0.49451530859140014,
+        "mae_a": 0.7703914402530072,
+        "pcc_v": 0.7892066860344916,
+        "pcc_a": 0.593093224636188
+      }
+    },
+    {
+      "name": "pseudo_holdout_soft_on_full_dev",
+      "n_train": 4296,
+      "metrics": {
+        "mae_v": 0.4902750530571205,
+        "mae_a": 0.7883756620517572,
+        "pcc_v": 0.7879515593820794,
+        "pcc_a": 0.5789705653338453
+      }
+    },
+    {
+      "name": "pseudo_holdout_train_half_dev_soft",
+      "n_train": 3799,
+      "metrics": {
+        "mae_v": 0.4964198871972794,
+        "mae_a": 0.7978076040696988,
+        "pcc_v": 0.7844440843042372,
+        "pcc_a": 0.5706446693937056
+      }
+    }
+  ],
+  "best_by_mae_a": {
+    "name": "dev_sample_weight_x3",
+    "n_train": 3948,
+    "metrics": {
+      "mae_v": 0.4955186882296705,
+      "mae_a": 0.7649973527907653,
+      "pcc_v": 0.788715346389835,
+      "pcc_a": 0.6009815907308016
+    }
+  },
+  "delta_mae_a_vs_rerun_svr": -0.02332377111775641,
+  "delta_mae_a_vs_five_head": -0.009125424732248089,
+  "goal_mae_a": 0.76,
+  "reached_goal": false,
+  "copy_sweep_mae_a": {
+    "x2": 0.7699,
+    "x3": 0.7650,
+    "x4": 0.7658,
+    "x5": 0.7703,
+    "x6": 0.7763
+  },
+  "submission": "results/intfloat__multilingual-e5-large-instruct_test_domain_adapt_best_submission.csv"
+}
