@@ -23,6 +23,13 @@ MODEL_PRESETS = {
         "notes": "Paper Table 1/3 primary encoder. Reasoning distill of Qwen3-8B.",
         "force_qwen2_tokenizer": True,
     },
+    "prover": {
+        "repo": "deepseek-ai/DeepSeek-Prover-V1.5-RL",
+        "fp16_weights_gb": 14.0,
+        "bnb4_weights_gb": "4–5",
+        "notes": "Paper Table 3 DeepSeek-Prover-V1.5-RL (7B). Mean-pool last_hidden_state.",
+        "force_qwen2_tokenizer": False,
+    },
     "taide": {
         "repo": "taide/Llama3-TAIDE-LX-8B-Chat-Alpha1",
         "fp16_weights_gb": 16.0,

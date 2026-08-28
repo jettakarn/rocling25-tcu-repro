@@ -4,7 +4,7 @@ This repo tries to reproduce parts of the paper
 *TCU at ROCLING-2025 Shared Task: Leveraging LLM Embeddings and Ensemble Regression for Chinese Dimensional Sentiment Analysis*  
 ([ACL Anthology](https://aclanthology.org/2025.rocling-main.44/)).
 
-I ran everything on an **RTX 3070 (8GB)**. The paper path below is what counts as reproduction. Extra scripts are labeled **non-paper**.
+Local work runs on an **RTX 3070 (8GB)** for e5. **DeepSeek-R1 FP16** full-corpus embeds need a **≥16GB** GPU (e.g. RunPod); see `scripts/`. Extra scripts are labeled **non-paper**.
 
 **Write-up:** [`notes/report.md`](notes/report.md)  
 **Which result files to cite:** [`results/README.md`](results/README.md)  
@@ -17,7 +17,8 @@ I ran everything on an **RTX 3070 (8GB)**. The paper path below is what counts a
 |---|---|---|
 | **Paper:** data → embed → SVR | e5-instruct (+ e5-large) | **done** |
 | **Paper:** Table 4 Models (regressor mean) | SVR+LGBM+XGB+CatBoost+ResNet | **done** |
-| **Paper:** DeepSeek / multi-LLM encode → Table 4 Encoders | needs ≥16GB FP embed | **not done** (8GB: probes + NF4 subset only) |
+| **Paper:** DeepSeek-R1 FP16 full embed → SVR (Table 3) | `embed_llm_full` + cloud GPU | **done** (metrics in `results/`) |
+| **Paper:** Prover / TAIDE / Table 4 Encoders | scripts ready | **in progress** / not all run |
 | **Non-paper:** labeled_dev ×3 / retrieval / pseudo | `src/domain_adapt.py` | optional; not a paper claim |
 
 ## Evaluation protocols
@@ -44,6 +45,7 @@ I ran everything on an **RTX 3070 (8GB)**. The paper path below is what counts a
 |---|---|---:|---:|---:|---:|
 | e5-instruct + SVR | paper | 0.488 | 0.788 | 0.788 | 0.578 |
 | e5-large (no instruct) + SVR | paper (Table 3 row) | 0.555 | 0.806 | 0.739 | 0.534 |
+| **DeepSeek-R1 FP16 + SVR** | paper (Table 3) | 0.517 | 0.799 | 0.743 | 0.555 |
 | Average of five regressors (+CatBoost) | paper (Table 4 Models) | **0.473** | **0.774** | 0.795 | 0.598 |
 | Average of the two e5 SVRs | paper-adjacent (weak Encoders) | 0.499 | 0.774 | 0.784 | 0.585 |
 | Stronger labeled_dev (×3 weight) | **non-paper** | 0.496 | 0.765 | 0.789 | 0.601 |
@@ -51,10 +53,18 @@ I ran everything on an **RTX 3070 (8GB)**. The paper path below is what counts a
 | Paper Table 4 (Encoders) | paper | 0.463 | 0.759 | 0.805 | 0.608 |
 | TCU leaderboard (encoder ensemble) | paper | 0.46 | 0.76 | 0.81 | 0.61 |
 
-## DeepSeek on 8GB (exploratory, not paper Table 1)
+### DeepSeek-R1 FP16 (Table 3 spirit)
 
-- Chinese tokenization: force `tokenizer_type="qwen2"`. See [`src/probe_llm.py`](src/probe_llm.py).
-- 4-bit NF4 load works (~4.6GB). Subset SVR is weaker than e5 on the same rows — `quantized=true`, not Table 1. See [`notes/feasibility_llm_8b.md`](notes/feasibility_llm_8b.md).
+| Protocol | MAE_V | MAE_A | PCC_V | PCC_A |
+|---|---:|---:|---:|---:|
+| **`full_dev_on_dev`** | **0.453** | **0.862** | 0.829 | 0.669 |
+| **`test`** | 0.517 | 0.799 | 0.743 | 0.555 |
+
+`quantized=false`. Config: `configs/deepseek_r1.yaml`. Embed: `python -m src.embed_llm_full --model deepseek --split all` (needs ≥16GB).
+
+## DeepSeek on 8GB (exploratory only)
+
+- 4-bit NF4 subset ≠ Table 1/3. Tokenizer: `qwen2`. See [`feasibility_llm_8b.md`](notes/feasibility_llm_8b.md).
 
 ## Data
 
@@ -86,9 +96,13 @@ python -m src.ensemble_models --strategy train_full_dev --run-official-scoring
 # Optional (non-paper): upweight labeled_dev
 python -m src.domain_adapt --dev-copies 3
 
-# Optional: DeepSeek 4-bit probe / subset embed (needs bitsandbytes; not Table 1)
+# Optional: DeepSeek 4-bit probe / subset (8GB; not Table 1)
 python -m src.probe_llm --model deepseek --download --load-in-4bit
 python -m src.embed_llm --help
+
+# Cloud / ≥16GB: FP16 full corpus (Table 3)
+# python -m src.embed_llm_full --config configs/deepseek_r1.yaml --model deepseek --split all
+# bash scripts/runpod_table3_encoders.sh
 ```
 
 ## Disclaimer

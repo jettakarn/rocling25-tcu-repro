@@ -13,6 +13,9 @@ Official scores live under `results/`. This folder mixes **paper-path** numbers,
 | `intfloat__multilingual-e5-large_test_train_full_dev.json` | e5-large (no instruct) → test (Table 3 row) |
 | `intfloat__multilingual-e5-large-instruct_train_full_dev.json` | SVR `full_dev_on_dev` (Table 3 spirit; optimistic) |
 | `intfloat__multilingual-e5-large-instruct_train_half_dev.json` | SVR `half_dev` (tuning only) |
+| `deepseek-ai__DeepSeek-R1-0528-Qwen3-8B_train_full_dev.json` | DeepSeek-R1 FP16 SVR **`full_dev_on_dev`** (Table 3) |
+| `deepseek-ai__DeepSeek-R1-0528-Qwen3-8B_test_train_full_dev.json` | DeepSeek-R1 FP16 SVR → **test** |
+| `deepseek-ai__DeepSeek-R1-0528-Qwen3-8B_test_train_full_dev_submission.csv` | matching submission |
 
 ## Paper-adjacent but incomplete
 
@@ -21,7 +24,7 @@ Official scores live under `results/`. This folder mixes **paper-path** numbers,
 | `encoder_ensemble_multilingual-e5-large-instruct+multilingual-e5-large_test_train_full_dev.json` | Weak stand-in for Table 4 **Encoders** (two e5 only, not paper LLMs) |
 | `deepseek_feasibility_a1.json` | Tokenizer fix + 4-bit smoke; **not** Table 1 |
 | `deepseek_r1_8b_nf4_subset_half_dev.json` | Quantized subset SVR; **not** Table 1/3 |
-| `deepseek_*.json`, `taide_feasibility.json` | GPU / load probes only |
+| `deepseek_feasibility.json`, `deepseek_4bit_probe.json`, `deepseek_r1_8b_feasibility.json`, `taide_feasibility.json` | GPU / load probes only |
 
 ## Non-paper / scratch (do not treat as reproduction claims)
 
@@ -34,5 +37,6 @@ Official scores live under `results/`. This folder mixes **paper-path** numbers,
 
 Headline numbers for the paper path:
 
-- SVR test: **0.488 / 0.788** MAE_V / MAE_A  
-- Models ensemble test: **0.473 / 0.774**
+- e5-instruct SVR test: **0.488 / 0.788** MAE_V / MAE_A  
+- Models ensemble test: **0.473 / 0.774**  
+- DeepSeek-R1 FP16 `full_dev_on_dev`: **0.453 / 0.862**; test: **0.517 / 0.799**

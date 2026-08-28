@@ -15,7 +15,8 @@ Day notes: `day3.md`, `day4.md`, `day6.md`, `day7.md`, `day8.md`.
 |---|---|---|
 | **Paper** | data → e5 embed → SVR / Table 3-style protocols | done |
 | **Paper** | Table 4 Models (regressor mean) | done |
-| **Paper** | DeepSeek + multi-LLM → Table 4 Encoders | **not done** (needs ≥16GB) |
+| **Paper** | DeepSeek-R1 FP16 full embed → SVR (Table 3) | **done** (`full_dev_on_dev` 0.453 / 0.862; test 0.517 / 0.799) |
+| **Paper** | Prover / TAIDE / Table 4 Encoders | scripts ready; not all run |
 | **Non-paper** | A4 `domain_adapt` (labeled_dev ×3, etc.) | optional only |
 
 ---
@@ -34,8 +35,8 @@ Goal: rebuild the “embed text → regress valence/arousal” pipeline with som
 | e5-large (no instruct) on test | paper | 0.555 / 0.806 / 0.739 / 0.534 |
 | A4 labeled_dev ×3 | **non-paper** | 0.496 / 0.765 / 0.789 / 0.601 |
 | vs paper e5 (Table 3) | — | ours MAE_A 0.984 on_dev vs paper 0.807 |
-| DeepSeek-R1 8B | paper gap | 4-bit probe only; FP16 Table 1/3 **not** done |
-| Bottom line (paper path) | — | best paper-path valence **0.473**, arousal **0.774** (Models ensemble) |
+| DeepSeek-R1 FP16 | paper Table 3 | `full_dev_on_dev` **0.453 / 0.862**; test **0.517 / 0.799** |
+| Bottom line (paper path) | — | Models ensemble still best test arousal **0.774**; DeepSeek stronger on_dev valence |
 
 ---
 
@@ -146,7 +147,16 @@ Small checks on **`half_dev`**: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046
 ### 3.4 DeepSeek / other 8B models
 
 See [`feasibility_llm_8b.md`](feasibility_llm_8b.md).  
-On 8GB, full FP16 embedding is not realistic. 4-bit NF4 loads (~4.6GB); Chinese tokenizer is fixed via `qwen2`. Subset SVR is exploratory only (`quantized=true`), not Tables 1–3.
+On 8GB, full FP16 embedding is not realistic (use cloud ≥16GB). 4-bit NF4 subset is exploratory only (`quantized=true`).
+
+**DeepSeek-R1 FP16 full corpus** (`src/embed_llm_full.py`, `configs/deepseek_r1.yaml`, `quantized=false`):
+
+| Protocol | MAE_V | MAE_A | PCC_V | PCC_A |
+|---|---:|---:|---:|---:|
+| **`full_dev_on_dev`** | **0.453** | **0.862** | 0.829 | 0.669 |
+| **`test`** | 0.517 | 0.799 | 0.743 | 0.555 |
+
+Tokenizer: force `qwen2`. Prover / TAIDE / multi-encoder average: see `scripts/runpod_table3_encoders.sh` (not all finished).
 
 ---
 
@@ -162,7 +172,7 @@ On 8GB, full FP16 embedding is not realistic. 4-bit NF4 loads (~4.6GB); Chinese 
    Train is general CVAT text; dev/test are medical reflections. Adding labeled_dev into training (`train_full_dev`) helps on test. Day 8 **A4** (non-paper) further weights labeled_dev ×3 → MAE_A 0.765; that is an extra experiment, not a paper claim.
 
 4. **What is still missing for a full paper reproduction.**  
-   Full DeepSeek FP16 embedding and multi-LLM encoder averaging (Table 4 Encoders). 4-bit DeepSeek is only a feasibility check.
+   Prover / TAIDE full embeds and multi-LLM encoder averaging (Table 4 Encoders). DeepSeek-R1 FP16 full corpus + SVR is in; 4-bit remains exploratory only.
 
 ---
 
@@ -187,7 +197,10 @@ On 8GB, full FP16 embedding is not realistic. 4-bit NF4 loads (~4.6GB); Chinese 
 | `src/custom_resnet.py` / `train_resnet.py` | paper | paper-style MLP |
 | `src/ensemble_models.py` | paper | Table 4 Models average |
 | `src/ensemble_encoders.py` | paper (partial) | multi-encoder SVR mean |
-| `src/probe_llm.py` / `embed_llm.py` | paper gap / probe | 8B load + NF4 subset embed |
+| `src/probe_llm.py` / `embed_llm.py` | probe / 8GB | 8B load + NF4 subset embed |
+| `src/embed_llm_full.py` | paper Table 3 | FP16/BF16 full-corpus LLM embed (≥16GB) |
+| `configs/deepseek_r1.yaml` / `deepseek_prover.yaml` | paper | LLM encoder configs |
+| `scripts/runpod_table3_encoders.sh` | paper | cloud embed + SVR + encoder mix |
 | `src/tune_svr.py` | scratch | SVR grid (flat) |
 | `src/domain_adapt.py` | **non-paper** | A4 labeled_dev weight / retrieval / pseudo |
 | `src/inspect_data.py` | util | CSV peek |

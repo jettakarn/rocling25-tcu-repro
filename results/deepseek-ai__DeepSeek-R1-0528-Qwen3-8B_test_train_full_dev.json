@@ -1,0 +1,23 @@
+{
+  "encoder": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+  "strategy": "train_full_dev",
+  "n_train": 3948,
+  "n_test": 1541,
+  "metrics": {
+    "mae_v": 0.5168832256643543,
+    "mae_a": 0.7986409959418002,
+    "pcc_v": 0.742846156560724,
+    "pcc_a": 0.5550510139132865
+  },
+  "submission": "results/deepseek-ai__DeepSeek-R1-0528-Qwen3-8B_test_train_full_dev_submission.csv",
+  "clip_range": [
+    1.0,
+    9.0
+  ],
+  "official_scoring": {
+    "Valence MAE": 0.5168832256643543,
+    "Valence PCC": 0.7428461565607245,
+    "Arousal MAE": 0.7986409959418002,
+    "Arousal PCC": 0.5550510139132867
+  }
+}
