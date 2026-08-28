@@ -4,7 +4,7 @@ Paper: [Li & Lin, ROCLING 2025](https://aclanthology.org/2025.rocling-main.44/)
 Machines: RTX 3070 8GB (e5); cloud ≥16GB for LLM FP16 embeds  
 Main local setup: **`intfloat/multilingual-e5-large-instruct` + SVR** (RBF, C=10, ε=0.2)
 
-Day notes: `day3.md`, `day4.md`, `day6.md`, `day7.md`.  
+Lab story: [`lab_story.md`](lab_story.md).  
 Table 1–2: [`table1_2_alignment.md`](table1_2_alignment.md).  
 **Which JSON to cite:** [`results/README.md`](../results/README.md).
 
@@ -18,7 +18,7 @@ Table 1–2: [`table1_2_alignment.md`](table1_2_alignment.md).
 | **Paper** | Table 4 Encoders (5-encoder mean on test) | **done** (**0.470 / 0.758**) |
 | **Paper** | Tables 1–2 DeepSeek train mixes / regressors | **done** (see `notes/table1_2_alignment.md`) |
 
-**Reproduction progress (method):** about **95%**. Remaining: unpublished paper details (exact pooling/prompt); high-priority scratch already removed (see `cleanup_candidates.md`).
+**Reproduction progress (method):** about **95%**. Remaining gap is mostly unpublished pooling/prompt details (Table 1–2 half_dev arousal still higher than paper).
 
 
 ---
@@ -56,7 +56,7 @@ Length and VA means look like the paper (train ~57.6 chars, V/A ≈ 4.8; dev/tes
 
 - Model: `multilingual-e5-large-instruct`
 - Prefix: `Instruct: {task}\nQuery: {text}`
-- `max_length=512`, no L2 by default (Day 3 tried L2; almost no change)
+- `max_length=512` (no embedding L2)
 - Size: 1024-d vectors under `data/embeddings/…`
 
 ### 2.3 Regression
@@ -107,7 +107,7 @@ All metrics below for **e5-instruct + SVR** unless noted. Source: `results/*.jso
 
 Paper **Table 3** e5-instruct row (SVR + train+full_dev, scored on dev): 0.523 / 0.807 / 0.742 / 0.539 — same **`full_dev_on_dev`** column as our 0.497 / 0.984 row, not our **`test`** row.
 
-Small checks on **`half_dev`**: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046; L2 1.044. Changing the regressor did not really help arousal.
+Small checks on **`half_dev`**: changing the regressor (grid / LGBM / XGB) did not really help arousal.
 
 ### 3.2 Test extras (all `train_full_dev` → `test`)
 
@@ -142,7 +142,8 @@ Small checks on **`half_dev`**: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046
 
 ### 3.4 DeepSeek / Prover / TAIDE (FP16 full corpus)
 
-Cloud ≥16GB; `src/embed_llm_full.py`; `quantized=false`. 8GB NF4 subset remains exploratory only.
+Cloud ≥16GB; `src/embed_llm_full.py` + `src/llm_encode.py`; `quantized=false`.
+DeepSeek-R1 Chinese tokenization uses forced Qwen2 BPE (`tokenizer_type="qwen2"`).
 
 | Encoder | `full_dev_on_dev` | test |
 |---|---|---|
@@ -166,7 +167,7 @@ TAIDE `full_dev_on_dev` looks extremely strong (optimistic protocol). Prefer **t
    `train_full_dev` helps on medical-style test text.
 
 4. **What remains.**  
-   Table 1–2 DeepSeek cells are filled (`notes/table1_2_alignment.md`) but half_dev MAE_A does not match paper (~1.05 vs 0.81). Headline test path is done. High-priority scratch (A4, L2/tune, NF4 probes, dual-e5 ensemble) was removed; see `cleanup_candidates.md`.
+   Table 1–2 DeepSeek cells are filled (`notes/table1_2_alignment.md`) but half_dev MAE_A does not match paper (~1.05 vs 0.81). Headline test path (Table 4 Encoders) is done.
 ---
 
 ## 5. Limits
@@ -190,28 +191,15 @@ TAIDE `full_dev_on_dev` looks extremely strong (optimistic protocol). Prefer **t
 | `src/custom_resnet.py` / `train_resnet.py` | paper | paper-style MLP |
 | `src/ensemble_models.py` | paper | Table 4 Models average |
 | `src/ensemble_encoders.py` | paper | multi-encoder SVR mean (Table 4 Encoders) |
-| `configs/taide.yaml` | paper | TAIDE encoder config |
-| `src/probe_llm.py` / `embed_llm.py` | probe / 8GB | 8B load + NF4 subset embed |
-| `src/embed_llm_full.py` | paper Table 3 | FP16/BF16 full-corpus LLM embed (≥16GB) |
-| `configs/deepseek_r1.yaml` / `deepseek_prover.yaml` | paper | LLM encoder configs |
+| `src/llm_encode.py` | paper | LLM tokenizer presets + mean-pool helpers |
+| `src/embed_llm_full.py` | paper | FP16/BF16 full-corpus LLM embed (≥16GB) |
+| `configs/deepseek_r1.yaml` / `deepseek_prover.yaml` / `taide.yaml` | paper | LLM encoder configs |
 | `scripts/runpod_table3_encoders.sh` | paper | cloud embed + SVR + encoder mix |
-| `src/tune_svr.py` | scratch | SVR grid (flat; script kept) |
-| `src/inspect_data.py` | util | CSV peek |
 | `results/README.md` | — | which JSON files to cite |
 | `notes/` | — | day notes and this report |
 
 ---
 
-## 7. Week overview
+## 7. Chronology
 
-| Day | What I did | Status |
-|---|---|---|
-| 1 | Data; 2954 train rows | done |
-| 2 | Embed + SVR / grid / trees | done |
-| 3 | Tables + L2 try | done |
-| 4 | Test + scoring | done |
-| 5 | This report | done |
-| 6 | ResNet, model average, DeepSeek check | done |
-| 7 | e5-large, CatBoost, dual e5, 4-bit probe | done (dual-e5 artifact later removed) |
-| 8 | A4 domain adapt | **removed** in cleanup (non-paper) |
-| 9 | Table 1–2 DeepSeek alignment + high-priority cleanup | done |
+Stage-by-stage decisions (not a second scoreboard): [`lab_story.md`](lab_story.md).

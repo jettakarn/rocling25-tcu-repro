@@ -14,7 +14,7 @@ except ImportError:  # optional until installed
     CatBoostRegressor = None  # type: ignore
 
 from src.metrics import evaluate_va, format_metrics
-from src.tune_svr import build_split
+from src.train_svr import build_split
 
 
 def make_model(name: str, seed: int):

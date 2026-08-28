@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from src.data_loader import load_table
 from src.embed import encoder_slug
-from src.probe_llm import MODEL_PRESETS, load_llm_tokenizer, mean_pool
+from src.llm_encode import MODEL_PRESETS, load_llm_tokenizer, mean_pool
 
 
 def load_fp_model(repo: str, dtype: torch.dtype):
@@ -72,7 +72,7 @@ def main() -> None:
         "--model",
         choices=sorted(MODEL_PRESETS),
         default=None,
-        help="Preset from probe_llm.MODEL_PRESETS.",
+        help="Preset from llm_encode.MODEL_PRESETS.",
     )
     parser.add_argument("--repo", default=None, help="Override HF repo id.")
     parser.add_argument(

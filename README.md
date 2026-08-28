@@ -1,35 +1,69 @@
-# ROCLING-2025 TCU Reproduction
+# 📊 Reproducing TCU at ROCLING-2025
 
-This repo tries to reproduce parts of the paper  
+Independent reproduction of  
 *TCU at ROCLING-2025 Shared Task: Leveraging LLM Embeddings and Ensemble Regression for Chinese Dimensional Sentiment Analysis*  
-([ACL Anthology](https://aclanthology.org/2025.rocling-main.44/)).
+([ACL Anthology](https://aclanthology.org/2025.rocling-main.44/)).  
+e5 runs locally on an **RTX 3070 (8GB)**; LLM FP16 full-corpus embeds need a **≥16GB** GPU. Scores are comparable to TCU’s published board figures (no ordinal rank claimed).
 
-Local work runs on an **RTX 3070 (8GB)** for e5. LLM FP16 full-corpus embeds need a **≥16GB** GPU (e.g. RunPod); see `scripts/`.
+[繁體中文](README.zh-TW.md) · English
 
-**Write-up:** [`notes/report.md`](notes/report.md)  
-**Which result files to cite:** [`results/README.md`](results/README.md)  
-**Day notes:** [`day3`](notes/day3.md) · [`day4`](notes/day4.md) · [`day6`](notes/day6.md) · [`day7`](notes/day7.md)  
-**Table 1–2 alignment:** [`table1_2_alignment.md`](notes/table1_2_alignment.md)  
-**Cleanup notes:** [`cleanup_candidates.md`](notes/cleanup_candidates.md)  
-**8B GPU notes:** [`feasibility_llm_8b.md`](notes/feasibility_llm_8b.md)
+## Docs
+
+- Write-up: [`notes/report.md`](notes/report.md)
+- Lab story (chronology): [`notes/lab_story.md`](notes/lab_story.md)
+- Which result files to cite: [`results/README.md`](results/README.md)
+- Table 1–2 alignment: [`notes/table1_2_alignment.md`](notes/table1_2_alignment.md)
+- Paper: [ACL Anthology](https://aclanthology.org/2025.rocling-main.44/)
+
+## Setup
+
+### 1. Environment
+
+```powershell
+cd D:\Projects\rocling-dsa-repro
+& "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe" -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+### 2. Dependencies
+
+```powershell
+pip install -r requirements.txt
+pip install torch --index-url https://download.pytorch.org/whl/cu126 --force-reinstall
+```
+
+### 3. Run (e5 on 8GB)
+
+```powershell
+python -m src.prepare_data
+python -m src.embed --split all
+python -m src.train_svr --strategy train_half_dev
+python -m src.predict_test --strategy train_full_dev --run-official-scoring
+python -m src.ensemble_models --strategy train_full_dev --run-official-scoring
+```
+
+### 4. LLM encoders (≥16GB)
+
+FP16 embeds for DeepSeek-R1 / Prover / TAIDE and Table 3–4 runs (e.g. RunPod):
+
+```bash
+bash scripts/runpod_table3_encoders.sh
+```
 
 ## Paper path
 
-| Track | In this repo | Status |
-|---|---|---|
-| **Paper:** data → embed → SVR | e5-instruct (+ e5-large) | **done** |
-| **Paper:** Table 4 Models (regressor mean) | SVR+LGBM+XGB+CatBoost+ResNet | **done** |
-| **Paper:** Table 3 LLM encoders (DeepSeek-R1 / Prover / TAIDE FP16) | `embed_llm_full` + cloud | **done** |
-| **Paper:** Table 4 Encoders (5-encoder mean on test) | R1+Prover+TAIDE+e5+e5-instruct | **done** (~board) |
-| **Paper:** Tables 1–2 (DeepSeek mixes / regressors) | [`notes/table1_2_alignment.md`](notes/table1_2_alignment.md) | **done** (numbers diverge on half_dev A) |
+- [x] data → embed → SVR (e5-instruct + e5-large)
+- [x] Table 4 Models — 5-regressor mean on test
+- [x] Table 3 LLM encoders — DeepSeek-R1 / Prover / TAIDE FP16 (`embed_llm_full`)
+- [x] Table 4 Encoders — 5-encoder mean on test (~board)
+- [x] Tables 1–2 DeepSeek mixes — done; half_dev arousal still high vs paper  
+  → details in [`notes/table1_2_alignment.md`](notes/table1_2_alignment.md)
 
 ## Evaluation protocols
 
-| Protocol | What it means |
-|---|---|
-| **`half_dev`** | Train on train + half of labeled_dev; score the other half (497). For tuning only. |
-| **`full_dev_on_dev`** | Train on train + full labeled_dev; score_dev (994). Matches paper **Table 3** spirit (optimistic). |
-| **`test`** | Train on train + full labeled_dev; score held-out test (1541). **Main claim**; same spirit as the shared-task board. |
+- **`half_dev`** — train on train + half labeled_dev; score the other half (497). Tuning only.
+- **`full_dev_on_dev`** — train on train + full labeled_dev; score_dev (994). Table 3–style; optimistic.
+- **`test`** — train on train + full labeled_dev; score held-out test (1541). **Main claim** / board spirit.
 
 **Leaderboard:** TCU’s board (~0.46 / 0.76 MAE) is closer to paper **Table 4 Encoders** on **`test`**, not **Table 3**. See [`notes/report.md`](notes/report.md).
 
@@ -43,23 +77,17 @@ Local work runs on an **RTX 3070 (8GB)** for e5. LLM FP16 full-corpus embeds nee
 | Paper Table 4 Encoders | — | 0.463 | 0.759 | 0.805 | 0.608 |
 | TCU board | test | 0.46 | 0.76 | 0.81 | 0.61 |
 
-## Table 3–style single encoders (SVR)
+## Single encoders (SVR, test)
 
-| Encoder | `full_dev_on_dev` MAE_V / MAE_A | test MAE_V / MAE_A |
-|---|---|---|
-| e5-instruct | 0.497 / 0.984 | 0.488 / 0.788 |
-| e5-large | — | 0.555 / 0.806 |
-| DeepSeek-R1 FP16 | 0.453 / 0.862 | 0.517 / 0.799 |
-| DeepSeek-Prover FP16 | 0.415 / 0.787 | 0.528 / 0.792 |
-| TAIDE FP16 | 0.218 / 0.395 | 0.562 / 0.822 |
+| Encoder | MAE_V | MAE_A |
+|---|---:|---:|
+| e5-instruct | 0.488 | 0.788 |
+| e5-large | 0.555 | 0.806 |
+| DeepSeek-R1 FP16 | 0.517 | 0.799 |
+| DeepSeek-Prover FP16 | 0.528 | 0.792 |
+| TAIDE FP16 | 0.562 | 0.822 |
 
-`full_dev_on_dev` is optimistic (dev labels were in training). Prefer **test** for fair comparison to the board.
-
-Paper Table 4 Models reference: 0.495 / 0.802.
-
-## 8GB note
-
-- Optional NF4 probe scripts remain (`probe_llm`, `embed_llm`); not Table 1/3 claims. See [`feasibility_llm_8b.md`](notes/feasibility_llm_8b.md).
+Optimistic `full_dev_on_dev` numbers live in [`notes/report.md`](notes/report.md). Prefer **test** for fair comparison to the board.
 
 ## Data
 
@@ -71,29 +99,6 @@ Shared-task clone: `data/raw/ROCLING-2025-ST-DSA-MST/`
 - Official scorer: `scoring.py`
 
 Raw data and embedding `.npy` files are **not** in git (see `.gitignore`).
-
-## How to run on Windows
-
-```powershell
-cd D:\Projects\rocling-dsa-repro
-& "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe" -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-pip install torch --index-url https://download.pytorch.org/whl/cu126 --force-reinstall
-
-# Paper path
-python -m src.prepare_data
-python -m src.embed --split all
-python -m src.train_svr --strategy train_half_dev
-python -m src.predict_test --strategy train_full_dev --run-official-scoring
-python -m src.ensemble_models --strategy train_full_dev --run-official-scoring
-
-# Optional 8GB probe (not Table 1)
-python -m src.probe_llm --model deepseek --download --load-in-4bit
-
-# Cloud / ≥16GB: FP16 full corpus (Table 3–4)
-# bash scripts/runpod_table3_encoders.sh
-```
 
 ## Disclaimer
 
