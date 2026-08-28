@@ -4,10 +4,19 @@ Paper: [Li & Lin, ROCLING 2025](https://aclanthology.org/2025.rocling-main.44/)
 Machine: RTX 3070 8GB, Python 3.13, CUDA torch  
 Main setup: **`intfloat/multilingual-e5-large-instruct` + SVR** (RBF, C=10, ε=0.2)
 
-I did **not** fully reproduce DeepSeek FP16 embedding or the paper’s five-encoder mix. Later days add CustomResNet, model averaging, e5-large, and some GPU checks for 8B models.
+I did **not** fully reproduce DeepSeek FP16 embedding or the paper’s five-encoder mix.
 
 Day notes: `day3.md`, `day4.md`, `day6.md`, `day7.md`, `day8.md`.  
-Scores as JSON: `results/*.json`.
+**Which JSON to cite:** [`results/README.md`](../results/README.md).
+
+### Paper path vs extras
+
+| Track | What | Status |
+|---|---|---|
+| **Paper** | data → e5 embed → SVR / Table 3-style protocols | done |
+| **Paper** | Table 4 Models (regressor mean) | done |
+| **Paper** | DeepSeek + multi-LLM → Table 4 Encoders | **not done** (needs ≥16GB) |
+| **Non-paper** | A4 `domain_adapt` (labeled_dev ×3, etc.) | optional only |
 
 ---
 
@@ -15,19 +24,18 @@ Scores as JSON: `results/*.json`.
 
 Goal: rebuild the “embed text → regress valence/arousal” pipeline with something that fits in 8GB, match the paper’s data sizes, and score with the official script.
 
-| Item | Result |
-|---|---|
-| Data | train 2954 (5 folds), dev 994, test 1541 |
-| **e5-instruct + SVR (`half_dev`)** | 0.541 / 1.044 / 0.756 / 0.526 (497 held-out dev rows) |
-| **e5-instruct + SVR (`full_dev_on_dev`)** | 0.497 / 0.984 / 0.788 / 0.590 (paper Table 3 style; optimistic) |
-| **e5-instruct + SVR (`test`)** | **0.488 / 0.788 / 0.788 / 0.578** |
-| **Test (five-model average)** | **0.473 / 0.774 / 0.795 / 0.598** |
-| **Test (A4: SVR + labeled_dev ×3 weight)** | **0.496 / 0.765 / 0.789 / 0.601** |
-| e5-large (no instruct) on test | 0.555 / 0.806 / 0.739 / 0.534 |
-| vs paper e5 (Table 3, `full_dev_on_dev`) | ours 0.984 MAE_A on dev vs paper 0.807 (different encoder eval setup) |
-| vs TCU leaderboard | A4 arousal ~0.765 ≈ board ~0.76; valence still behind; board ≈ Table 4 **Encoders** on **test** |
-| DeepSeek-R1 8B | 4-bit load works (~4.6GB); Chinese tokenizer broke full embedding for now |
-| Bottom line | best **arousal** on 8GB is A4 labeled_dev ×3 (0.765); best **valence** is five-model average (0.473) |
+| Item | Track | Result |
+|---|---|---|
+| Data | paper | train 2954 (5 folds), dev 994, test 1541 |
+| **e5-instruct + SVR (`half_dev`)** | paper | 0.541 / 1.044 / 0.756 / 0.526 |
+| **e5-instruct + SVR (`full_dev_on_dev`)** | paper | 0.497 / 0.984 / 0.788 / 0.590 |
+| **e5-instruct + SVR (`test`)** | paper | **0.488 / 0.788 / 0.788 / 0.578** |
+| **Test (five-model average)** | paper (Table 4 Models) | **0.473 / 0.774 / 0.795 / 0.598** |
+| e5-large (no instruct) on test | paper | 0.555 / 0.806 / 0.739 / 0.534 |
+| A4 labeled_dev ×3 | **non-paper** | 0.496 / 0.765 / 0.789 / 0.601 |
+| vs paper e5 (Table 3) | — | ours MAE_A 0.984 on_dev vs paper 0.807 |
+| DeepSeek-R1 8B | paper gap | 4-bit probe only; FP16 Table 1/3 **not** done |
+| Bottom line (paper path) | — | best paper-path valence **0.473**, arousal **0.774** (Models ensemble) |
 
 ---
 
@@ -78,7 +86,8 @@ python -m src.prepare_data
 python -m src.embed --split all
 python -m src.train_svr --strategy train_half_dev
 python -m src.predict_test --strategy train_full_dev --run-official-scoring
-python -m src.domain_adapt --dev-copies 3
+python -m src.ensemble_models --strategy train_full_dev --run-official-scoring
+# non-paper only: python -m src.domain_adapt --dev-copies 3
 ```
 
 ---
@@ -111,7 +120,7 @@ Small checks on **`half_dev`**: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046
 | CustomResNet | 0.455 | 0.797 | 0.790 | 0.585 |
 | Average SVR+LGBM+XGB+ResNet | 0.472 | 0.776 | 0.795 | 0.596 |
 | **+ CatBoost (five models)** | **0.473** | **0.774** | **0.795** | **0.598** |
-| A4 SVR labeled_dev weight ×3 | 0.496 | **0.765** | 0.789 | 0.601 |
+| A4 SVR labeled_dev ×3 (**non-paper**) | 0.496 | 0.765 | 0.789 | 0.601 |
 
 ### 3.3 Compare to the paper / leaderboard
 
@@ -120,7 +129,7 @@ Small checks on **`half_dev`**: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046
 | This repo, e5+SVR | **`test`** | 0.488 | 0.788 | 0.788 | 0.578 |
 | This repo, e5+SVR | **`full_dev_on_dev`** | 0.497 | 0.984 | 0.788 | 0.590 |
 | This repo, five-model average | **`test`** | **0.473** | 0.774 | **0.795** | 0.598 |
-| **This repo, A4 stronger labeled_dev** | **`test`** | 0.496 | **0.765** | 0.789 | **0.601** |
+| This repo, A4 (**non-paper**) | **`test`** | 0.496 | 0.765 | 0.789 | 0.601 |
 | Paper Table 3 e5-instruct | **`full_dev_on_dev`** | 0.523 | 0.807 | 0.742 | 0.539 |
 | Paper Table 4 Models | paper (mixed) | 0.495 | 0.802 | 0.772 | 0.544 |
 | Paper Table 4 Encoders | paper (mixed) | 0.463 | 0.759 | 0.805 | 0.608 |
@@ -137,7 +146,7 @@ Small checks on **`half_dev`**: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046
 ### 3.4 DeepSeek / other 8B models
 
 See [`feasibility_llm_8b.md`](feasibility_llm_8b.md).  
-On 8GB, full FP16 embedding is not realistic. 4-bit can load, but Chinese tokenization still blocks a full run here.
+On 8GB, full FP16 embedding is not realistic. 4-bit NF4 loads (~4.6GB); Chinese tokenizer is fixed via `qwen2`. Subset SVR is exploratory only (`quantized=true`), not Tables 1–3.
 
 ---
 
@@ -150,10 +159,10 @@ On 8GB, full FP16 embedding is not realistic. 4-bit can load, but Chinese tokeni
    Test arousal 0.788 is closer to the board than half-dev tuning suggested. After five-model averaging we are about 0.01–0.02 MAE behind TCU. Closing that gap likely needs more encoders and more VRAM.
 
 3. **Domain shift.**  
-   Train is general CVAT text; dev/test are medical reflections. Adding labeled_dev into training helps a lot on test (especially arousal). Day 8: **weighting labeled_dev ×3** further cuts MAE_A to **0.765** (beats five-head on arousal). Retrieval upsample and soft pseudo on a held-out half_dev did not help.
+   Train is general CVAT text; dev/test are medical reflections. Adding labeled_dev into training (`train_full_dev`) helps on test. Day 8 **A4** (non-paper) further weights labeled_dev ×3 → MAE_A 0.765; that is an extra experiment, not a paper claim.
 
-4. **What I skipped.**  
-   Full DeepSeek FP16 embedding and five big encoders. CustomResNet and model averaging are in the repo. 4-bit DeepSeek is only a feasibility check for now.
+4. **What is still missing for a full paper reproduction.**  
+   Full DeepSeek FP16 embedding and multi-LLM encoder averaging (Table 4 Encoders). 4-bit DeepSeek is only a feasibility check.
 
 ---
 
@@ -168,20 +177,22 @@ On 8GB, full FP16 embedding is not realistic. 4-bit can load, but Chinese tokeni
 
 ## 6. What is in the repo
 
-| Path | What it is |
-|---|---|
-| `configs/experiment.yaml` | seeds, encoder, SVR, paths |
-| `src/prepare_data.py` | builds train/dev/test csv |
-| `src/embed.py` | e5 embeddings |
-| `src/train_svr.py` / `tune_svr.py` / `train_boost.py` | regressors |
-| `src/predict_test.py` | test predict + official scoring |
-| `src/custom_resnet.py` / `train_resnet.py` | paper-style MLP |
-| `src/ensemble_models.py` | average several regressors |
-| `src/ensemble_encoders.py` | average SVRs from more than one encoder |
-| `src/domain_adapt.py` | A4 labeled_dev weight / retrieval / pseudo |
-| `src/probe_llm.py` | 8B load checks |
-| `results/*` | metrics JSON and submission csv |
-| `notes/` | day notes and this report |
+| Path | Track | What it is |
+|---|---|---|
+| `configs/experiment.yaml` | paper | seeds, encoder, SVR, paths |
+| `src/prepare_data.py` | paper | builds train/dev/test csv |
+| `src/embed.py` | paper | e5 embeddings |
+| `src/train_svr.py` / `train_boost.py` | paper | regressors |
+| `src/predict_test.py` | paper | test predict + official scoring |
+| `src/custom_resnet.py` / `train_resnet.py` | paper | paper-style MLP |
+| `src/ensemble_models.py` | paper | Table 4 Models average |
+| `src/ensemble_encoders.py` | paper (partial) | multi-encoder SVR mean |
+| `src/probe_llm.py` / `embed_llm.py` | paper gap / probe | 8B load + NF4 subset embed |
+| `src/tune_svr.py` | scratch | SVR grid (flat) |
+| `src/domain_adapt.py` | **non-paper** | A4 labeled_dev weight / retrieval / pseudo |
+| `src/inspect_data.py` | util | CSV peek |
+| `results/README.md` | — | which JSON files to cite |
+| `notes/` | — | day notes and this report |
 
 ---
 

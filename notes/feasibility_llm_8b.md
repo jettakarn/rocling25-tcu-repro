@@ -5,7 +5,8 @@ Models from the paper:
 - `deepseek-ai/DeepSeek-R1-0528-Qwen3-8B`
 - `taide/Llama3-TAIDE-LX-8B-Chat-Alpha1` (also has an official `…-4bit` repo)
 
-Script: `python -m src.probe_llm --model {deepseek|taide}`
+Script: `python -m src.probe_llm --model {deepseek|taide}`  
+(Older `probe_deepseek.py` was removed; use `probe_llm`.)
 
 ## Shared conclusions
 
@@ -15,6 +16,17 @@ Script: `python -m src.probe_llm --model {deepseek|taide}`
 | bitsandbytes NF4 embed | **maybe → yes (subset)** | ~4.6GB weights; Chinese tokenizer fixed |
 | GGUF / Ollama chat | chat maybe | **not** hidden-state → SVR |
 | Exact paper Table 1/3 numbers | **no** if quantized | only exploratory |
+
+## Rough memory sizes (public estimates)
+
+| Load style | Weights | Extra cost | Fits 8GB? |
+|---|---:|---|---|
+| FP16 / BF16 (transformers) | ~16.4 GB | ~18+ GB | **no** |
+| Q8 GGUF | ~8–9 GB | often over 8GB | **risky / no** |
+| Q4_K_M GGUF (chat) | ~4.7–5.5 GB | ~6–7.6 GB (short context) | **chat: maybe** |
+| bitsandbytes NF4 | ~4.5–6 GB | activations; long text may OOM | **embed: subset yes** |
+
+The paper uses the LLM as an **embedding model** (hidden states → SVR), not as a chat model that prints a score.
 
 ## Llama3-TAIDE
 
@@ -67,7 +79,7 @@ Artifact: `results/deepseek_feasibility_a1.json`.
 
 ### A2 subset SVR (2026-08-26) — `quantized=true`
 
-- Embed: `src/embed_llm.py` → `data/embeddings/deepseek_r1_8b_nf4/` (300 train + 200 dev, batch=1, max_length=512, NF4).
+- Embed: `src/embed_llm.py` → `data/embeddings/deepseek_r1_8b_nf4/` (300 train + 200_dev, batch=1, max_length=512, NF4).
 - Protocol: same `train_half_dev` split on that subset; e5-instruct compared on **identical rows**.
 - **Not** paper Table 1.
 

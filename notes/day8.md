@@ -1,5 +1,7 @@
 # Day 8 lab notes: A4 light domain adaptation (e5-instruct)
 
+**Track: non-paper.** Extra experiment; not part of the TCU method reproduction.
+
 Goal: push **test MAE_A** from five-head **0.774** toward **0.76**, still on cached `multilingual-e5-large-instruct` only. No new 8B embedder. **No test gold labels in training.**
 
 Command:

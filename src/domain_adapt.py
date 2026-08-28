@@ -1,4 +1,6 @@
-"""Phase A4: light domain adaptation on cached e5-instruct embeddings.
+"""Phase A4 (non-paper): light domain adaptation on cached e5-instruct embeddings.
+
+Not part of the TCU paper method. Kept as an optional experiment.
 
 Experiments (no test gold labels in training):
   - baseline_full_dev: train + labeled_dev (documents existing test protocol)

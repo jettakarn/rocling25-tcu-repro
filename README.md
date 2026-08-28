@@ -4,11 +4,21 @@ This repo tries to reproduce parts of the paper
 *TCU at ROCLING-2025 Shared Task: Leveraging LLM Embeddings and Ensemble Regression for Chinese Dimensional Sentiment Analysis*  
 ([ACL Anthology](https://aclanthology.org/2025.rocling-main.44/)).
 
-I ran everything on an **RTX 3070 (8GB)**. The main line is `multilingual-e5-large-instruct` + SVR. I did **not** run the full five-encoder setup or DeepSeek in full FP16.
+I ran everything on an **RTX 3070 (8GB)**. The paper path below is what counts as reproduction. Extra scripts are labeled **non-paper**.
 
 **Write-up:** [`notes/report.md`](notes/report.md)  
+**Which result files to cite:** [`results/README.md`](results/README.md)  
 **Day notes:** [`day3`](notes/day3.md) · [`day4`](notes/day4.md) · [`day6`](notes/day6.md) · [`day7`](notes/day7.md) · [`day8`](notes/day8.md)  
 **8B GPU notes:** [`feasibility_llm_8b.md`](notes/feasibility_llm_8b.md)
+
+## Paper path vs extras
+
+| Track | In this repo | Status |
+|---|---|---|
+| **Paper:** data → embed → SVR | e5-instruct (+ e5-large) | **done** |
+| **Paper:** Table 4 Models (regressor mean) | SVR+LGBM+XGB+CatBoost+ResNet | **done** |
+| **Paper:** DeepSeek / multi-LLM encode → Table 4 Encoders | needs ≥16GB FP embed | **not done** (8GB: probes + NF4 subset only) |
+| **Non-paper:** labeled_dev ×3 / retrieval / pseudo | `src/domain_adapt.py` | optional; not a paper claim |
 
 ## Evaluation protocols
 
@@ -20,7 +30,7 @@ I ran everything on an **RTX 3070 (8GB)**. The main line is `multilingual-e5-lar
 
 **Leaderboard:** TCU’s board (~0.46 / 0.76 MAE) is closer to paper **Table 4 Encoders** on **`test`**, not **Table 3** (single encoder on_dev). See [`notes/report.md`](notes/report.md) §2.4 and §3.1.
 
-## Main scores (e5-instruct + SVR)
+## Main scores (e5-instruct + SVR) — paper path
 
 | Protocol | MAE_V | MAE_A | PCC_V | PCC_A |
 |---|---:|---:|---:|---:|
@@ -30,23 +40,21 @@ I ran everything on an **RTX 3070 (8GB)**. The main line is `multilingual-e5-lar
 
 ## Test benchmarks (`train_full_dev` → test)
 
-| Setup | MAE_V | MAE_A | PCC_V | PCC_A |
-|---|---:|---:|---:|---:|
-| e5-instruct + SVR | 0.488 | 0.788 | 0.788 | 0.578 |
-| e5-large (no instruct) + SVR | 0.555 | 0.806 | 0.739 | 0.534 |
-| Average of the two e5 SVRs | 0.499 | 0.774 | 0.784 | 0.585 |
-| Average of five regressors (+CatBoost) | 0.473 | 0.774 | 0.795 | 0.598 |
-| **Stronger labeled_dev (×3 weight)** | 0.496 | **0.765** | 0.789 | 0.601 |
-| Paper Table 4 (Models) | 0.495 | 0.802 | 0.772 | 0.544 |
-| Paper Table 4 (Encoders) | 0.463 | 0.759 | 0.805 | 0.608 |
-| TCU leaderboard (encoder ensemble) | 0.46 | 0.76 | 0.81 | 0.61 |
-
-**Best arousal on this GPU so far:** labeled_dev ×3 SVR (MAE_A **0.765**). Details in [`notes/day8.md`](notes/day8.md).
+| Setup | Track | MAE_V | MAE_A | PCC_V | PCC_A |
+|---|---|---:|---:|---:|---:|
+| e5-instruct + SVR | paper | 0.488 | 0.788 | 0.788 | 0.578 |
+| e5-large (no instruct) + SVR | paper (Table 3 row) | 0.555 | 0.806 | 0.739 | 0.534 |
+| Average of five regressors (+CatBoost) | paper (Table 4 Models) | **0.473** | **0.774** | 0.795 | 0.598 |
+| Average of the two e5 SVRs | paper-adjacent (weak Encoders) | 0.499 | 0.774 | 0.784 | 0.585 |
+| Stronger labeled_dev (×3 weight) | **non-paper** | 0.496 | 0.765 | 0.789 | 0.601 |
+| Paper Table 4 (Models) | paper | 0.495 | 0.802 | 0.772 | 0.544 |
+| Paper Table 4 (Encoders) | paper | 0.463 | 0.759 | 0.805 | 0.608 |
+| TCU leaderboard (encoder ensemble) | paper | 0.46 | 0.76 | 0.81 | 0.61 |
 
 ## DeepSeek on 8GB (exploratory, not paper Table 1)
 
-- Chinese tokenization: force `tokenizer_type="qwen2"` (repo’s LlamaTokenizerFast path returned empty CJK ids). See [`src/probe_llm.py`](src/probe_llm.py).
-- 4-bit NF4 load works (~4.6GB). Subset SVR (300 train + 200_dev) is **weaker** than e5 on the same rows — labeled `quantized=true`, not a Table 1 reproduction. See [`notes/feasibility_llm_8b.md`](notes/feasibility_llm_8b.md).
+- Chinese tokenization: force `tokenizer_type="qwen2"`. See [`src/probe_llm.py`](src/probe_llm.py).
+- 4-bit NF4 load works (~4.6GB). Subset SVR is weaker than e5 on the same rows — `quantized=true`, not Table 1. See [`notes/feasibility_llm_8b.md`](notes/feasibility_llm_8b.md).
 
 ## Data
 
@@ -68,18 +76,17 @@ cd D:\Projects\rocling-dsa-repro
 pip install -r requirements.txt
 pip install torch --index-url https://download.pytorch.org/whl/cu126 --force-reinstall
 
-
+# Paper path
 python -m src.prepare_data
 python -m src.embed --split all
 python -m src.train_svr --strategy train_half_dev
 python -m src.predict_test --strategy train_full_dev --run-official-scoring
-python -m src.train_resnet --strategy train_half_dev
 python -m src.ensemble_models --strategy train_full_dev --run-official-scoring
 
-# Optional: upweight labeled_dev (best MAE_A so far)
+# Optional (non-paper): upweight labeled_dev
 python -m src.domain_adapt --dev-copies 3
 
-# Optional: DeepSeek 4-bit probe / subset embed (needs bitsandbytes)
+# Optional: DeepSeek 4-bit probe / subset embed (needs bitsandbytes; not Table 1)
 python -m src.probe_llm --model deepseek --download --load-in-4bit
 python -m src.embed_llm --help
 ```

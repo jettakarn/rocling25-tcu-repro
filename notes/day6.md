@@ -8,7 +8,7 @@ Also checked whether **DeepSeek-R1 8B** can run on this GPU (no full embedding y
 ```powershell
 python -m src.train_resnet --strategy train_half_dev
 python -m src.ensemble_models --strategy train_full_dev --run-official-scoring
-python -m src.probe_deepseek
+python -m src.probe_llm --model deepseek
 ```
 
 ## CustomResNet
@@ -46,12 +46,12 @@ Averaging beats single SVR and also beats the paper’s “Models” row. Still 
 
 ## DeepSeek-R1 8B
 
-See [`feasibility_deepseek_r1_8b.md`](feasibility_deepseek_r1_8b.md) and the updated [`feasibility_llm_8b.md`](feasibility_llm_8b.md).  
+See [`feasibility_llm_8b.md`](feasibility_llm_8b.md).  
 FP16 embedding does not fit. 4-bit might load; I did not make it a must-do for this week.
 
 ## Files
 
-- `src/custom_resnet.py`, `train_resnet.py`, `ensemble_models.py`, `probe_deepseek.py`
+- `src/custom_resnet.py`, `train_resnet.py`, `ensemble_models.py`, `probe_llm.py`
 - `results/*_ensemble*`
 - `results/deepseek_r1_8b_feasibility.json`
 

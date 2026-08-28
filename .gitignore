@@ -25,6 +25,7 @@ models/
 # Results: keep metrics & submissions; drop official scoring staging (copies ans)
 results/**
 !results/.gitkeep
+!results/README.md
 !results/*.json
 !results/*_submission.csv
 results/_official_score/
