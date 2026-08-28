@@ -1,0 +1,23 @@
+{
+  "encoder": "taide/Llama3-TAIDE-LX-8B-Chat-Alpha1",
+  "strategy": "train_full_dev",
+  "n_train": 3948,
+  "n_test": 1541,
+  "metrics": {
+    "mae_v": 0.5620887301446101,
+    "mae_a": 0.8220847952464753,
+    "pcc_v": 0.717284543985983,
+    "pcc_a": 0.5420583843569744
+  },
+  "submission": "results/taide__Llama3-TAIDE-LX-8B-Chat-Alpha1_test_train_full_dev_submission.csv",
+  "clip_range": [
+    1.0,
+    9.0
+  ],
+  "official_scoring": {
+    "Valence MAE": 0.5620887301446101,
+    "Valence PCC": 0.7172845439859836,
+    "Arousal MAE": 0.8220847952464753,
+    "Arousal PCC": 0.5420583843569743
+  }
+}

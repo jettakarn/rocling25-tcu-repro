@@ -109,9 +109,12 @@ def main() -> None:
             if args.force_qwen2_tokenizer is None
             else bool(args.force_qwen2_tokenizer)
         )
+        bytelevel_fast = bool(preset.get("bytelevel_fast_tokenizer"))
     elif args.repo:
         repo = args.repo
         force_qwen2 = bool(args.force_qwen2_tokenizer)
+        bytelevel_fast = False
+        preset = {}
     else:
         raise SystemExit("Pass --model or --repo")
 
@@ -130,7 +133,13 @@ def main() -> None:
 
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
-    tok = load_llm_tokenizer(repo, force_qwen2=force_qwen2)
+    tok = load_llm_tokenizer(
+        repo, force_qwen2=force_qwen2, bytelevel_fast=bytelevel_fast
+    )
+    if len(tok.encode("病人情況穩定。")) == 0 and not bytelevel_fast:
+        # Retry Prover-style ByteLevel path if AutoTokenizer emptied CJK.
+        tok = load_llm_tokenizer(repo, force_qwen2=False, bytelevel_fast=True)
+        bytelevel_fast = True
     if len(tok.encode("病人情況穩定。")) == 0:
         raise SystemExit("Chinese tokenization empty; abort (check tokenizer)")
 
@@ -145,6 +154,7 @@ def main() -> None:
         "max_length": max_length,
         "batch_size": args.batch_size,
         "force_qwen2_tokenizer": force_qwen2,
+        "bytelevel_fast_tokenizer": bytelevel_fast,
         "peak_vram_after_load_gb": peak_load,
         "claim": "FP full-corpus — paper Table 3 encoder path",
         "splits": {},

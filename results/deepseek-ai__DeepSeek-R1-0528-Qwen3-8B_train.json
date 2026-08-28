@@ -1,0 +1,13 @@
+{
+  "encoder": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+  "strategy": "train",
+  "l2_normalize": false,
+  "n_train": 2954,
+  "n_eval": 994,
+  "metrics": {
+    "mae_v": 0.6769834632713937,
+    "mae_a": 1.118026179091995,
+    "pcc_v": 0.6586574914904224,
+    "pcc_a": 0.39682124105587885
+  }
+}

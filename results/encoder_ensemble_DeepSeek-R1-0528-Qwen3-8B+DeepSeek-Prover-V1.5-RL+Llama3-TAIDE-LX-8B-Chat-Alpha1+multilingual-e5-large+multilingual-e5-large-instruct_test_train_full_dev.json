@@ -1,0 +1,49 @@
+{
+  "encoders": [
+    "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+    "deepseek-ai/DeepSeek-Prover-V1.5-RL",
+    "taide/Llama3-TAIDE-LX-8B-Chat-Alpha1",
+    "intfloat/multilingual-e5-large",
+    "intfloat/multilingual-e5-large-instruct"
+  ],
+  "strategy": "train_full_dev",
+  "per_encoder": {
+    "deepseek-ai__DeepSeek-R1-0528-Qwen3-8B": {
+      "mae_v": 0.5168832256643543,
+      "mae_a": 0.7986409959418002,
+      "pcc_v": 0.742846156560724,
+      "pcc_a": 0.5550510139132865
+    },
+    "deepseek-ai__DeepSeek-Prover-V1.5-RL": {
+      "mae_v": 0.5282998748948239,
+      "mae_a": 0.7920782440883203,
+      "pcc_v": 0.7439744981718324,
+      "pcc_a": 0.5634197966987604
+    },
+    "taide__Llama3-TAIDE-LX-8B-Chat-Alpha1": {
+      "mae_v": 0.5620887301446101,
+      "mae_a": 0.8220847952464753,
+      "pcc_v": 0.717284543985983,
+      "pcc_a": 0.5420583843569744
+    },
+    "intfloat__multilingual-e5-large": {
+      "mae_v": 0.5553542747751958,
+      "mae_a": 0.8058169454251393,
+      "pcc_v": 0.7392217579516188,
+      "pcc_a": 0.5344915022869138
+    },
+    "intfloat__multilingual-e5-large-instruct": {
+      "mae_v": 0.488227784713438,
+      "mae_a": 0.7883211239085212,
+      "pcc_v": 0.7879031296167215,
+      "pcc_a": 0.5775042239356324
+    }
+  },
+  "metrics": {
+    "mae_v": 0.46975531126498665,
+    "mae_a": 0.7580835246667159,
+    "pcc_v": 0.7989312248138295,
+    "pcc_a": 0.6101359194611642
+  },
+  "submission": "results/encoder_ensemble_DeepSeek-R1-0528-Qwen3-8B+DeepSeek-Prover-V1.5-RL+Llama3-TAIDE-LX-8B-Chat-Alpha1+multilingual-e5-large+multilingual-e5-large-instruct_test_train_full_dev_submission.csv"
+}

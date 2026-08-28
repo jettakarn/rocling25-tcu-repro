@@ -1,0 +1,23 @@
+{
+  "encoder": "deepseek-ai/DeepSeek-Prover-V1.5-RL",
+  "strategy": "train_full_dev",
+  "n_train": 3948,
+  "n_test": 1541,
+  "metrics": {
+    "mae_v": 0.5282998748948239,
+    "mae_a": 0.7920782440883203,
+    "pcc_v": 0.7439744981718324,
+    "pcc_a": 0.5634197966987604
+  },
+  "submission": "results/deepseek-ai__DeepSeek-Prover-V1.5-RL_test_train_full_dev_submission.csv",
+  "clip_range": [
+    1.0,
+    9.0
+  ],
+  "official_scoring": {
+    "Valence MAE": 0.5282998748948239,
+    "Valence PCC": 0.743974498171833,
+    "Arousal MAE": 0.7920782440883203,
+    "Arousal PCC": 0.5634197966987606
+  }
+}

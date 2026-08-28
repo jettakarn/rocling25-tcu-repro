@@ -1,0 +1,13 @@
+{
+  "encoder": "taide/Llama3-TAIDE-LX-8B-Chat-Alpha1",
+  "strategy": "train_full_dev",
+  "l2_normalize": false,
+  "n_train": 3948,
+  "n_eval": 994,
+  "metrics": {
+    "mae_v": 0.21765003608210168,
+    "mae_a": 0.39544658233950297,
+    "pcc_v": 0.9708744145073926,
+    "pcc_a": 0.9280409051702193
+  }
+}

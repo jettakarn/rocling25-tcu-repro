@@ -27,8 +27,13 @@ MODEL_PRESETS = {
         "repo": "deepseek-ai/DeepSeek-Prover-V1.5-RL",
         "fp16_weights_gb": 14.0,
         "bnb4_weights_gb": "4–5",
-        "notes": "Paper Table 3 DeepSeek-Prover-V1.5-RL (7B). Mean-pool last_hidden_state.",
+        "notes": (
+            "Paper Table 3 DeepSeek-Prover-V1.5-RL (7B). Mean-pool last_hidden_state. "
+            "tokenizer.json is ByteLevel BPE; transformers v5 LlamaTokenizer Metaspace "
+            "override empties CJK — load via PreTrainedTokenizerFast."
+        ),
         "force_qwen2_tokenizer": False,
+        "bytelevel_fast_tokenizer": True,
     },
     "taide": {
         "repo": "taide/Llama3-TAIDE-LX-8B-Chat-Alpha1",
@@ -44,12 +49,21 @@ PROBE_ZH = "病人情況穩定，家屬情緒平靜。"
 PROBE_EN = "Hello world"
 
 
-def load_llm_tokenizer(repo: str, *, force_qwen2: bool = False):
+def load_llm_tokenizer(
+    repo: str,
+    *,
+    force_qwen2: bool = False,
+    bytelevel_fast: bool = False,
+):
     """Load tokenizer; DeepSeek-R1-Qwen3 needs Qwen2 BPE, not LlamaTokenizerFast.
 
     The HF repo sets tokenizer_class=LlamaTokenizerFast. Under transformers 5.x that
     path yields empty input_ids for Chinese (English still tokenizes, but with
     different ids than tokenizer.json). Force tokenizer_type='qwen2' / Qwen2Tokenizer.
+
+    DeepSeek-Prover ships ByteLevel BPE in tokenizer.json but advertises LlamaTokenizer;
+    v5 LlamaTokenizer injects Metaspace and drops CJK. Use PreTrainedTokenizerFast to
+    honor tokenizer.json (bytelevel_fast=True).
     """
     from transformers import AutoTokenizer
 
@@ -62,6 +76,10 @@ def load_llm_tokenizer(repo: str, *, force_qwen2: bool = False):
             from transformers import Qwen2TokenizerFast
 
             tok = Qwen2TokenizerFast.from_pretrained(repo, trust_remote_code=True)
+    elif bytelevel_fast:
+        from transformers import PreTrainedTokenizerFast
+
+        tok = PreTrainedTokenizerFast.from_pretrained(repo, trust_remote_code=True)
     else:
         tok = AutoTokenizer.from_pretrained(repo, trust_remote_code=True)
     if tok.pad_token is None:

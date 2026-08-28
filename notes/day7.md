@@ -41,7 +41,7 @@ See [`feasibility_llm_8b.md`](feasibility_llm_8b.md). Short version:
 ## 4. DeepSeek-R1 4-bit on this PC
 
 - Installed `bitsandbytes` and `accelerate`
-- **4-bit load worked**, peak VRAM ~**4.59 GB** (`results/deepseek_4bit_probe.json`)
+- **4-bit load worked**, peak VRAM ~**4.59 GB** (probe JSON later removed in cleanup; see `deepseek_feasibility_a1.json`)
 - **Blocker:** `tokenizer.encode` on **Chinese** returns an empty list (English works). Until that is fixed, I cannot embed the medical texts.
 - Recipe in [`feasibility_llm_8b.md`](feasibility_llm_8b.md)
 

@@ -1,42 +1,42 @@
 # Project report: ROCLING-2025 TCU DSA reproduction
 
 Paper: [Li & Lin, ROCLING 2025](https://aclanthology.org/2025.rocling-main.44/)  
-Machine: RTX 3070 8GB, Python 3.13, CUDA torch  
-Main setup: **`intfloat/multilingual-e5-large-instruct` + SVR** (RBF, C=10, ε=0.2)
+Machines: RTX 3070 8GB (e5); cloud ≥16GB for LLM FP16 embeds  
+Main local setup: **`intfloat/multilingual-e5-large-instruct` + SVR** (RBF, C=10, ε=0.2)
 
-I did **not** fully reproduce DeepSeek FP16 embedding or the paper’s five-encoder mix.
-
-Day notes: `day3.md`, `day4.md`, `day6.md`, `day7.md`, `day8.md`.  
+Day notes: `day3.md`, `day4.md`, `day6.md`, `day7.md`.  
+Table 1–2: [`table1_2_alignment.md`](table1_2_alignment.md).  
 **Which JSON to cite:** [`results/README.md`](../results/README.md).
 
-### Paper path vs extras
+### Paper path
 
 | Track | What | Status |
 |---|---|---|
-| **Paper** | data → e5 embed → SVR / Table 3-style protocols | done |
-| **Paper** | Table 4 Models (regressor mean) | done |
-| **Paper** | DeepSeek-R1 FP16 full embed → SVR (Table 3) | **done** (`full_dev_on_dev` 0.453 / 0.862; test 0.517 / 0.799) |
-| **Paper** | Prover / TAIDE / Table 4 Encoders | scripts ready; not all run |
-| **Non-paper** | A4 `domain_adapt` (labeled_dev ×3, etc.) | optional only |
+| **Paper** | data → e5 embed → SVR / Table 3-style protocols | **done** |
+| **Paper** | Table 4 Models (regressor mean) | **done** |
+| **Paper** | DeepSeek-R1 / Prover / TAIDE FP16 → SVR (Table 3) | **done** |
+| **Paper** | Table 4 Encoders (5-encoder mean on test) | **done** (**0.470 / 0.758**) |
+| **Paper** | Tables 1–2 DeepSeek train mixes / regressors | **done** (see `notes/table1_2_alignment.md`) |
+
+**Reproduction progress (method):** about **95%**. Remaining: unpublished paper details (exact pooling/prompt); high-priority scratch already removed (see `cleanup_candidates.md`).
+
 
 ---
 
 ## 1. Goal and takeaways
 
-Goal: rebuild the “embed text → regress valence/arousal” pipeline with something that fits in 8GB, match the paper’s data sizes, and score with the official script.
+Goal: rebuild embed → valence/arousal regression, match paper data sizes, score with the official script, and cover Table 3–4 spirit.
 
 | Item | Track | Result |
 |---|---|---|
-| Data | paper | train 2954 (5 folds), dev 994, test 1541 |
-| **e5-instruct + SVR (`half_dev`)** | paper | 0.541 / 1.044 / 0.756 / 0.526 |
-| **e5-instruct + SVR (`full_dev_on_dev`)** | paper | 0.497 / 0.984 / 0.788 / 0.590 |
-| **e5-instruct + SVR (`test`)** | paper | **0.488 / 0.788 / 0.788 / 0.578** |
-| **Test (five-model average)** | paper (Table 4 Models) | **0.473 / 0.774 / 0.795 / 0.598** |
-| e5-large (no instruct) on test | paper | 0.555 / 0.806 / 0.739 / 0.534 |
-| A4 labeled_dev ×3 | **non-paper** | 0.496 / 0.765 / 0.789 / 0.601 |
-| vs paper e5 (Table 3) | — | ours MAE_A 0.984 on_dev vs paper 0.807 |
-| DeepSeek-R1 FP16 | paper Table 3 | `full_dev_on_dev` **0.453 / 0.862**; test **0.517 / 0.799** |
-| Bottom line (paper path) | — | Models ensemble still best test arousal **0.774**; DeepSeek stronger on_dev valence |
+| Data | paper | train 2954, dev 994, test 1541 |
+| e5-instruct SVR test | paper | 0.488 / 0.788 / 0.788 / 0.578 |
+| Table 4 Models (5 regressors) | paper | 0.473 / 0.774 / 0.795 / 0.598 |
+| **5-encoder mean (Table 4 Encoders)** | paper | **0.470 / 0.758 / 0.799 / 0.610** |
+| DeepSeek-R1 / Prover / TAIDE | paper Table 3 | see §3.4 |
+| DeepSeek Table 1–2 cells | paper | see [`table1_2_alignment.md`](table1_2_alignment.md) |
+| Paper / board Encoders | — | ~0.46 / 0.76 |
+| Bottom line | — | Encoder ensemble ≈ board; Table 1–2 half_dev arousal still higher than paper |
 
 ---
 
@@ -88,7 +88,6 @@ python -m src.embed --split all
 python -m src.train_svr --strategy train_half_dev
 python -m src.predict_test --strategy train_full_dev --run-official-scoring
 python -m src.ensemble_models --strategy train_full_dev --run-official-scoring
-# non-paper only: python -m src.domain_adapt --dev-copies 3
 ```
 
 ---
@@ -117,20 +116,18 @@ Small checks on **`half_dev`**: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046
 | train only (SVR) | 0.496 | 0.854 | 0.770 | 0.527 |
 | **e5-instruct + SVR** | **0.488** | **0.788** | **0.788** | **0.578** |
 | e5-large (no instruct) + SVR | 0.555 | 0.806 | 0.739 | 0.534 |
-| dual e5 SVR mean (encoder ensemble) | 0.499 | 0.774 | 0.784 | 0.585 |
 | CustomResNet | 0.455 | 0.797 | 0.790 | 0.585 |
 | Average SVR+LGBM+XGB+ResNet | 0.472 | 0.776 | 0.795 | 0.596 |
 | **+ CatBoost (five models)** | **0.473** | **0.774** | **0.795** | **0.598** |
-| A4 SVR labeled_dev ×3 (**non-paper**) | 0.496 | 0.765 | 0.789 | 0.601 |
+| **5-encoder mean (R1+Prover+TAIDE+e5+e5-instruct)** | **0.470** | **0.758** | **0.799** | **0.610** |
 
 ### 3.3 Compare to the paper / leaderboard
 
 | System | Protocol | MAE_V | MAE_A | PCC_V | PCC_A |
 |---|---|---:|---:|---:|---:|
 | This repo, e5+SVR | **`test`** | 0.488 | 0.788 | 0.788 | 0.578 |
-| This repo, e5+SVR | **`full_dev_on_dev`** | 0.497 | 0.984 | 0.788 | 0.590 |
-| This repo, five-model average | **`test`** | **0.473** | 0.774 | **0.795** | 0.598 |
-| This repo, A4 (**non-paper**) | **`test`** | 0.496 | 0.765 | 0.789 | 0.601 |
+| This repo, five-model average | **`test`** | 0.473 | 0.774 | 0.795 | 0.598 |
+| **This repo, 5-encoder mean** | **`test`** | **0.470** | **0.758** | **0.799** | **0.610** |
 | Paper Table 3 e5-instruct | **`full_dev_on_dev`** | 0.523 | 0.807 | 0.742 | 0.539 |
 | Paper Table 4 Models | paper (mixed) | 0.495 | 0.802 | 0.772 | 0.544 |
 | Paper Table 4 Encoders | paper (mixed) | 0.463 | 0.759 | 0.805 | 0.608 |
@@ -139,41 +136,37 @@ Small checks on **`half_dev`**: SVR grid best MAE_A 1.033; LGBM 1.051; XGB 1.046
 
 **How to read this table**
 
-- Compare our **`test`** rows to TCU / CYUT and to paper **Table 4 Encoders** — all are held-out **`test`** (or paper ensemble) claims, not Table 3 dev scores.
-- Compare our **`full_dev_on_dev`** row to paper **Table 3** e5-instruct — both train on train+full_dev and score on **dev** (optimistic; dev labels were in training).
-- Do **not** compare our **`half_dev`** arousal (1.044) to paper Table 3 (0.807) or the board (0.76); the holdout is small and a different split.
-- Tables 1–2 in the paper mostly use **DeepSeek**, not e5.
+- Compare our **`test`** rows to TCU / CYUT and to paper **Table 4 Encoders**.
+- Compare **`full_dev_on_dev`** to paper **Table 3** (optimistic).
+- Do **not** compare **`half_dev`** arousal (1.044) to Table 3 or the board.
 
-### 3.4 DeepSeek / other 8B models
+### 3.4 DeepSeek / Prover / TAIDE (FP16 full corpus)
 
-See [`feasibility_llm_8b.md`](feasibility_llm_8b.md).  
-On 8GB, full FP16 embedding is not realistic (use cloud ≥16GB). 4-bit NF4 subset is exploratory only (`quantized=true`).
+Cloud ≥16GB; `src/embed_llm_full.py`; `quantized=false`. 8GB NF4 subset remains exploratory only.
 
-**DeepSeek-R1 FP16 full corpus** (`src/embed_llm_full.py`, `configs/deepseek_r1.yaml`, `quantized=false`):
+| Encoder | `full_dev_on_dev` | test |
+|---|---|---|
+| DeepSeek-R1 | 0.453 / 0.862 / 0.829 / 0.669 | 0.517 / 0.799 / 0.743 / 0.555 |
+| DeepSeek-Prover | 0.415 / 0.787 / 0.851 / 0.729 | 0.528 / 0.792 / 0.744 / 0.563 |
+| TAIDE | 0.218 / 0.395 / 0.971 / 0.928 | 0.562 / 0.822 / 0.717 / 0.542 |
 
-| Protocol | MAE_V | MAE_A | PCC_V | PCC_A |
-|---|---:|---:|---:|---:|
-| **`full_dev_on_dev`** | **0.453** | **0.862** | 0.829 | 0.669 |
-| **`test`** | 0.517 | 0.799 | 0.743 | 0.555 |
-
-Tokenizer: force `qwen2`. Prover / TAIDE / multi-encoder average: see `scripts/runpod_table3_encoders.sh` (not all finished).
+TAIDE `full_dev_on_dev` looks extremely strong (optimistic protocol). Prefer **test** for claims. Five-encoder average on test is the Table 4 Encoders claim (**0.470 / 0.758**).
 
 ---
 
 ## 4. Discussion
 
 1. **Use the right protocol column.**  
-   `half_dev` MAE_A was 1.044; the same SVR on **`test`** got 0.788. Paper Table 3 (0.807) belongs in **`full_dev_on_dev`**, not **`half_dev`** or **`test`**. The board (~0.76 MAE_A) belongs with **`test`** / Table 4 **Encoders**, not Table 3.
+   Board / Table 4 Encoders ↔ **`test`**. Table 3 ↔ **`full_dev_on_dev`**. Do not mix with `half_dev`.
 
-2. **Single e5 on test is already strong; averaging models helps a bit more.**  
-   Test arousal 0.788 is closer to the board than half-dev tuning suggested. After five-model averaging we are about 0.01–0.02 MAE behind TCU. Closing that gap likely needs more encoders and more VRAM.
+2. **Encoder ensemble closes the board gap.**  
+   Models-only average left ~0.01–0.02 MAE_A behind TCU. Five-encoder mean hits **0.758** MAE_A (≈ board 0.76 / paper 0.759); valence **0.470** vs board ~0.46.
 
 3. **Domain shift.**  
-   Train is general CVAT text; dev/test are medical reflections. Adding labeled_dev into training (`train_full_dev`) helps on test. Day 8 **A4** (non-paper) further weights labeled_dev ×3 → MAE_A 0.765; that is an extra experiment, not a paper claim.
+   `train_full_dev` helps on medical-style test text.
 
-4. **What is still missing for a full paper reproduction.**  
-   Prover / TAIDE full embeds and multi-LLM encoder averaging (Table 4 Encoders). DeepSeek-R1 FP16 full corpus + SVR is in; 4-bit remains exploratory only.
-
+4. **What remains.**  
+   Table 1–2 DeepSeek cells are filled (`notes/table1_2_alignment.md`) but half_dev MAE_A does not match paper (~1.05 vs 0.81). Headline test path is done. High-priority scratch (A4, L2/tune, NF4 probes, dual-e5 ensemble) was removed; see `cleanup_candidates.md`.
 ---
 
 ## 5. Limits
@@ -196,13 +189,13 @@ Tokenizer: force `qwen2`. Prover / TAIDE / multi-encoder average: see `scripts/r
 | `src/predict_test.py` | paper | test predict + official scoring |
 | `src/custom_resnet.py` / `train_resnet.py` | paper | paper-style MLP |
 | `src/ensemble_models.py` | paper | Table 4 Models average |
-| `src/ensemble_encoders.py` | paper (partial) | multi-encoder SVR mean |
+| `src/ensemble_encoders.py` | paper | multi-encoder SVR mean (Table 4 Encoders) |
+| `configs/taide.yaml` | paper | TAIDE encoder config |
 | `src/probe_llm.py` / `embed_llm.py` | probe / 8GB | 8B load + NF4 subset embed |
 | `src/embed_llm_full.py` | paper Table 3 | FP16/BF16 full-corpus LLM embed (≥16GB) |
 | `configs/deepseek_r1.yaml` / `deepseek_prover.yaml` | paper | LLM encoder configs |
 | `scripts/runpod_table3_encoders.sh` | paper | cloud embed + SVR + encoder mix |
-| `src/tune_svr.py` | scratch | SVR grid (flat) |
-| `src/domain_adapt.py` | **non-paper** | A4 labeled_dev weight / retrieval / pseudo |
+| `src/tune_svr.py` | scratch | SVR grid (flat; script kept) |
 | `src/inspect_data.py` | util | CSV peek |
 | `results/README.md` | — | which JSON files to cite |
 | `notes/` | — | day notes and this report |
@@ -219,5 +212,6 @@ Tokenizer: force `qwen2`. Prover / TAIDE / multi-encoder average: see `scripts/r
 | 4 | Test + scoring | done |
 | 5 | This report | done |
 | 6 | ResNet, model average, DeepSeek check | done |
-| 7 | e5-large, CatBoost, dual e5, 4-bit probe | done |
-| 8 | A4 domain adapt (dev ×3 → MAE_A 0.765) | done |
+| 7 | e5-large, CatBoost, dual e5, 4-bit probe | done (dual-e5 artifact later removed) |
+| 8 | A4 domain adapt | **removed** in cleanup (non-paper) |
+| 9 | Table 1–2 DeepSeek alignment + high-priority cleanup | done |

@@ -90,7 +90,7 @@ Artifact: `results/deepseek_feasibility_a1.json`.
 
 e5 wins on this small holdout. 4-bit DeepSeek is runnable but weaker here; full FP corpus needs Phase B (≥16GB).
 
-Artifact: `results/deepseek_r1_8b_nf4_subset_half_dev.json`.
+Artifact (historical; JSON removed in cleanup): `results/deepseek_r1_8b_nf4_subset_half_dev.json`.
 
 ## Can I do multi-encoder fusion?
 
