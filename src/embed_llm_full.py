@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """FP16/BF16 full-corpus LLM mean-pool embeddings (paper Table 3 path).
 
-Needs ≥16GB VRAM for 8B models. Example on RunPod:
+Needs an RTX 4090 24GB (RunPod) for 8B FP16 models. Example:
 
   python -m src.embed_llm_full --model deepseek --split all
   python -m src.embed_llm_full --model prover --split all

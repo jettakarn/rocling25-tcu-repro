@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Full Table 3 LLM embeds + Table 4 five-encoder ensemble on a ≥16GB GPU.
+# Full Table 3 LLM embeds + Table 4 five-encoder ensemble on an RTX 4090 24GB (RunPod).
 # Requires HF_TOKEN in the environment for gated TAIDE.
 set -euo pipefail
 cd /workspace/rocling-dsa-repro

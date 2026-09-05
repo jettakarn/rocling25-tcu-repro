@@ -1,7 +1,7 @@
 # Project report: ROCLING-2025 TCU DSA reproduction
 
 Paper: [Li & Lin, ROCLING 2025](https://aclanthology.org/2025.rocling-main.44/)  
-Machines: RTX 3070 8GB (e5); cloud ≥16GB for LLM FP16 embeds  
+Machines: RTX 3070 8GB (e5); RTX 4090 24GB (RunPod) for LLM FP16 embeds  
 Main local setup: **`intfloat/multilingual-e5-large-instruct` + SVR** (RBF, C=10, ε=0.2)
 
 Lab story: [`lab_story.md`](lab_story.md).  
@@ -143,7 +143,7 @@ Small checks on **`half_dev`**: changing the regressor (grid / LGBM / XGB) did n
 
 ### 3.4 DeepSeek / Prover / TAIDE (FP16 full corpus)
 
-Cloud ≥16GB; `src/embed_llm_full.py` + `src/llm_encode.py`; `quantized=false`.
+RTX 4090 24GB (RunPod); `src/embed_llm_full.py` + `src/llm_encode.py`; `quantized=false`.
 DeepSeek-R1 Chinese tokenization uses forced Qwen2 BPE (`tokenizer_type="qwen2"`).
 
 | Encoder | `full_dev_on_dev` | test |
@@ -173,7 +173,7 @@ TAIDE `full_dev_on_dev` looks extremely strong (optimistic protocol). Prefer **t
 
 ## 5. Limits
 
-- 8GB GPU; embed batch size 16; no fine-tuning of the encoder
+- RTX 3070 8GB for e5; embed batch size 16; no fine-tuning of the encoder
 - Scoring **dev** after `train_full_dev` is optimistic; using that train setup for **test** is fine
 - Half-dev split uses `seed=42`
 - See `requirements.txt`; install CUDA torch separately if needed
@@ -193,9 +193,9 @@ TAIDE `full_dev_on_dev` looks extremely strong (optimistic protocol). Prefer **t
 | `src/ensemble_models.py` | paper | Table 4 Models average |
 | `src/ensemble_encoders.py` | paper | multi-encoder SVR mean (Table 4 Encoders) |
 | `src/llm_encode.py` | paper | LLM tokenizer presets + mean-pool helpers |
-| `src/embed_llm_full.py` | paper | FP16/BF16 full-corpus LLM embed (≥16GB) |
+| `src/embed_llm_full.py` | paper | FP16/BF16 full-corpus LLM embed (RTX 4090 24GB / RunPod) |
 | `configs/deepseek_r1.yaml` / `deepseek_prover.yaml` / `taide.yaml` | paper | LLM encoder configs |
-| `scripts/runpod_table3_encoders.sh` | paper | cloud embed + SVR + encoder mix |
+| `scripts/runpod_table3_encoders.sh` | paper | RTX 4090 24GB (RunPod) embed + SVR + encoder mix |
 | `results/README.md` | — | which JSON files to cite |
 | `notes/` | — | day notes and this report |
 

@@ -3,7 +3,7 @@
 獨立重現論文  
 *TCU at ROCLING-2025 Shared Task: Leveraging LLM Embeddings and Ensemble Regression for Chinese Dimensional Sentiment Analysis*  
 （[ACL Anthology](https://aclanthology.org/2025.rocling-main.44/)）。  
-e5 可在本機 **RTX 3070（8GB）** 跑；LLM FP16 全語料 embedding 需 **≥16GB** GPU。分數與 TCU 公開榜數字相當（不宣稱名次）。
+e5 可在本機 **RTX 3070 8GB** 跑；LLM FP16 全語料 embedding 在 **RTX 4090 24GB（RunPod）** 上跑。分數與 TCU 公開榜數字相當（不宣稱名次）。
 
 [English](README.md) · 繁體中文
 
@@ -33,7 +33,7 @@ pip install -r requirements.txt
 pip install torch --index-url https://download.pytorch.org/whl/cu126 --force-reinstall
 ```
 
-### 3. Run（e5，8GB）
+### 3. Run（e5，RTX 3070 8GB）
 
 ```powershell
 python -m src.prepare_data
@@ -43,9 +43,9 @@ python -m src.predict_test --strategy train_full_dev --run-official-scoring
 python -m src.ensemble_models --strategy train_full_dev --run-official-scoring
 ```
 
-### 4. LLM encoders（≥16GB）
+### 4. LLM encoders（RTX 4090 24GB / RunPod）
 
-DeepSeek-R1 / Prover / TAIDE 的 FP16 embedding 與 Table 3–4（例如 RunPod）：
+DeepSeek-R1 / Prover / TAIDE 的 FP16 embedding 與 Table 3–4：
 
 ```bash
 bash scripts/runpod_table3_encoders.sh

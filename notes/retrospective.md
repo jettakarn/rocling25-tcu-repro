@@ -13,7 +13,7 @@ Paper: [Li & Lin, ROCLING 2025](https://aclanthology.org/2025.rocling-main.44/).
 
 ## 1. What we did to get these results
 
-Hardware that shaped every step: **RTX 3070 8GB** for day-to-day e5 work; **≥16GB cloud** (e.g. RunPod) later for paper LLM FP16 embeds.
+Hardware that shaped every step: **RTX 3070 8GB** for day-to-day e5 work; **RTX 4090 24GB (RunPod)** later for paper LLM FP16 embeds.
 
 ### Data and scoring
 
@@ -21,7 +21,7 @@ Hardware that shaped every step: **RTX 3070 8GB** for day-to-day e5 work; **≥1
 - Dev **994**, test **1541**, with labels for local evaluation.
 - Scored with the official `scoring.py` (predictions clipped to [1, 9]).
 
-### Local e5 path (8GB)
+### Local e5 path (RTX 3070 8GB)
 
 - Embedded with `intfloat/multilingual-e5-large-instruct` (Instruct prefix, `max_length=512`) and later `e5-large` without instruct.
 - Regressed valence / arousal with **SVR** (RBF, C=10, ε=0.2), matching the paper’s stated SVR setup.
@@ -37,12 +37,12 @@ Hardware that shaped every step: **RTX 3070 8GB** for day-to-day e5 work; **≥1
 - Equal-weight **five-regressor mean** on test (Table 4 Models spirit): about **0.473 / 0.774**.
 - Beat the paper’s Models row; still short of encoder-ensemble arousal (~0.76).
 
-### Extra encoder tries on 8GB
+### Extra encoder tries on RTX 3070 8GB
 
 - Ran e5-large alone (weaker than instruct; near the paper’s e5-large spirit on test).
 - Tried a **dual-e5** average: arousal improved a little, valence got worse — weak encoders drag an equal-weight mix.
 
-### Cloud LLM path (Tables 1–3)
+### RTX 4090 24GB (RunPod) LLM path (Tables 1–3)
 
 - Built FP16 full-corpus embeds for **DeepSeek-R1**, **DeepSeek-Prover**, and **TAIDE** via `embed_llm_full` + shared helpers in `llm_encode` (including a Qwen2 tokenizer preset for DeepSeek-R1).
 - Filled Table 3–style single-encoder rows and DeepSeek Table 1–2 train-mix / regressor cells (see `table1_2_alignment.md`).
@@ -64,7 +64,7 @@ Hardware that shaped every step: **RTX 3070 8GB** for day-to-day e5 work; **≥1
 | Broken all-in-one train CSV | `CVAT_all_SD.csv` had bad rows / wrong size | Merge folds 1–5 only | Never trust the convenience file; match paper sizes first |
 | Protocol mix-up | half_dev MAE_A ~**1.04** looked far from board ~**0.76** | Name `half_dev` / `full_dev_on_dev` / `test`; claim on **test** | Wrong column makes a good run look like a failure |
 | DeepSeek Chinese tokenization | Empty `input_ids` on Chinese; English OK | Use **Qwen2** tokenizer preset for DeepSeek-R1 | Model card / auto tokenizer choice can silently break CJK |
-| 8GB cannot hold FP16 8B embeds | Weights alone ~16GB | Move LLM embeds to **≥16GB** cloud; keep e5 local | Hardware split is part of the method story |
+| RTX 3070 8GB cannot hold FP16 8B embeds | Weights alone ~16GB | Move LLM embeds to **RTX 4090 24GB (RunPod)**; keep e5 local | Hardware split is part of the method story |
 | Fake “encoder ensemble” with two e5s | Dual-e5 hurt valence | Bring in real paper LLMs before averaging | Weak heads drag equal-weight means |
 | Regressor chasing on arousal | SVR grid / trees barely moved half_dev A | Stop treating arousal as a hyperparameter problem | Bottleneck is embedding / domain, not the head |
 | Table 1–2 cells still off after DeepSeek | half_dev MAE_A ~**1.05** vs paper ~**0.81** | Document gap; do not overclaim exact cells | Unpublished pooling / prompt / seed details limit fidelity |
@@ -90,7 +90,7 @@ Hardware that shaped every step: **RTX 3070 8GB** for day-to-day e5 work; **≥1
 | Headline board comparison | Table 4 Encoders / shared-task board | Five-encoder **test** mean **0.470 / 0.758** ≈ paper ~0.463 / 0.759 and board ~0.46 / 0.76 |
 | Table 1–2 half_dev arousal | DeepSeek ~**0.81** MAE_A | DeepSeek-R1 FP16 ~**1.05** MAE_A (trend OK, cell not tight) |
 | Protocol naming | Tables imply different train/eval mixes | We made three named protocols explicit so columns are not mixed |
-| Hardware story | Not the focus of the write-up | 8GB local e5 + cloud LLM embeds is how we actually ran it |
+| Hardware story | Not the focus of the write-up | RTX 3070 8GB local e5 + RTX 4090 24GB (RunPod) LLM embeds is how we actually ran it |
 | Domain adapt / probes | Not part of the published paper path | Tried (e.g. labeled_dev upweighting), then **stripped** from the lean repo so claims stay paper-first |
 
 ### Where we match closely vs where we diverge

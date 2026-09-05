@@ -2,13 +2,13 @@
 
 This note is a **chronology of decisions**. Final claims, full metric tables, and paper comparisons live in [`report.md`](report.md). Post-discussion review (process, fixes, paper vs ours, discoveries): [`retrospective.md`](retrospective.md). DeepSeek Table 1–2 cells: [`table1_2_alignment.md`](table1_2_alignment.md). Cite JSON via [`results/README.md`](../results/README.md).
 
-Hardware constraint that shaped every bet: **RTX 3070 8GB** for day-to-day work; **≥16GB cloud** later for paper LLM embeds.
+Hardware constraint that shaped every bet: **RTX 3070 8GB** for day-to-day work; **RTX 4090 24GB (RunPod)** later for paper LLM embeds.
 
 ---
 
 ## Stage 1 — Data and a runnable pipe
 
-**Believed:** Match the shared-task sizes first; use something that fits 8GB.
+**Believed:** Match the shared-task sizes first; use something that fits an RTX 3070 8GB.
 
 **Did:** Merged CVAT folds 1–5 → train **2954** (skipped broken `CVAT_all_SD.csv`). Dev **994**, test **1541**. Embedded with `multilingual-e5-large-instruct` + Instruct prefix; SVR RBF C=10, ε=0.2.
 
@@ -50,7 +50,7 @@ Hardware constraint that shaped every bet: **RTX 3070 8GB** for day-to-day work;
 
 **Learned:** Models ensemble beat the paper’s Models row and closed most of the gap to the board—but not quite the encoder-ensemble arousal (~0.76).
 
-**Next:** Try another encoder that still fits 8GB; sketch multi-encoder averaging.
+**Next:** Try another encoder that still fits an RTX 3070 8GB; sketch multi-encoder averaging.
 
 ---
 
@@ -62,11 +62,11 @@ Hardware constraint that shaped every bet: **RTX 3070 8GB** for day-to-day work;
 
 **Learned:** Weak encoders drag the average. A real Table 4 Encoders claim needs the paper’s strong LLMs, not two e5s.
 
-**Next:** Move LLM FP16 embedding to a larger GPU; keep e5 caches for the final mix.
+**Next:** Move LLM FP16 embedding to an **RTX 4090 24GB (RunPod)**; keep e5 caches for the final mix.
 
 ---
 
-## Stage 6 — Cloud LLM path (Tables 1–3)
+## Stage 6 — RTX 4090 24GB (RunPod) LLM path (Tables 1–3)
 
 **Believed:** DeepSeek-R1 / Prover / TAIDE FP16 mean-pool + SVR would fill Table 3 and let us check Table 1–2.
 
