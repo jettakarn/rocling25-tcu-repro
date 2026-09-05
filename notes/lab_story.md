@@ -1,6 +1,6 @@
 # Lab story: how this reproduction unfolded
 
-This note is a **chronology of decisions**. Final claims, full metric tables, and paper comparisons live in [`report.md`](report.md). DeepSeek Table 1–2 cells: [`table1_2_alignment.md`](table1_2_alignment.md). Cite JSON via [`results/README.md`](../results/README.md).
+This note is a **chronology of decisions**. Final claims, full metric tables, and paper comparisons live in [`report.md`](report.md). Post-discussion review (process, fixes, paper vs ours, discoveries): [`retrospective.md`](retrospective.md). DeepSeek Table 1–2 cells: [`table1_2_alignment.md`](table1_2_alignment.md). Cite JSON via [`results/README.md`](../results/README.md).
 
 Hardware constraint that shaped every bet: **RTX 3070 8GB** for day-to-day work; **≥16GB cloud** later for paper LLM embeds.
 

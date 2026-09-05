@@ -11,6 +11,7 @@ e5 runs locally on an **RTX 3070 (8GB)**; LLM FP16 full-corpus embeds need a **â
 
 - Write-up: [`notes/report.md`](notes/report.md)
 - Lab story (chronology): [`notes/lab_story.md`](notes/lab_story.md)
+- Post-discussion review: [`notes/retrospective.md`](notes/retrospective.md)
 - Which result files to cite: [`results/README.md`](results/README.md)
 - Table 1â€“2 alignment: [`notes/table1_2_alignment.md`](notes/table1_2_alignment.md)
 - Paper: [ACL Anthology](https://aclanthology.org/2025.rocling-main.44/)

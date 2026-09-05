@@ -5,6 +5,7 @@ Machines: RTX 3070 8GB (e5); cloud ≥16GB for LLM FP16 embeds
 Main local setup: **`intfloat/multilingual-e5-large-instruct` + SVR** (RBF, C=10, ε=0.2)
 
 Lab story: [`lab_story.md`](lab_story.md).  
+Post-discussion review: [`retrospective.md`](retrospective.md).  
 Table 1–2: [`table1_2_alignment.md`](table1_2_alignment.md).  
 **Which JSON to cite:** [`results/README.md`](../results/README.md).
 

@@ -11,6 +11,7 @@ e5 可在本機 **RTX 3070（8GB）** 跑；LLM FP16 全語料 embedding 需 **�
 
 - 報告：[`notes/report.md`](notes/report.md)
 - 實驗時序（lab story）：[`notes/lab_story.md`](notes/lab_story.md)
+- 討論後檢討：[`notes/retrospective.md`](notes/retrospective.md)
 - 應引用的結果檔：[`results/README.md`](results/README.md)
 - Table 1–2 對齊說明：[`notes/table1_2_alignment.md`](notes/table1_2_alignment.md)
 - 論文：[ACL Anthology](https://aclanthology.org/2025.rocling-main.44/)
